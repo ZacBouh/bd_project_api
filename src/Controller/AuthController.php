@@ -11,6 +11,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Serializer\SerializerInterface;
 
 
@@ -32,5 +33,19 @@ final class AuthController extends AbstractController
         $entityManager->persist($user);
         $entityManager->flush();
         return $this->json($user, 200, context: ['groups' => 'user:read']);
+    }
+
+    #[Route('/auth/login', name: 'auth_login', methods: 'POST')]
+    public function login(#[CurrentUser] ?User $user): JsonResponse
+    {
+        if (is_null($user)) {
+            return $this->json([
+                'message' => 'missing credentials'
+            ]);
+        }
+        return $this->json([
+            'message' => 'successfully logged in',
+            'user' => $user->getUserIdentifier(),
+        ]);
     }
 }
