@@ -31,10 +31,6 @@ final class AuthController extends AbstractController
         $user->setPassword($hashedPassword);
         $entityManager->persist($user);
         $entityManager->flush();
-
-        return $this->json([
-            'message' => 'Received registration request',
-            'content' => $user,
-        ]);
+        return $this->json($user, 200, context: ['groups' => 'user:read']);
     }
 }
