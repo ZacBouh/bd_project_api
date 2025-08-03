@@ -21,5 +21,9 @@ services:
             $serializer: '@serializer'
         tags:
             - {name: kernel.event_listener, event: lexik_jwt_authentication.on_authentication_success, method: onAuthenticationSuccess }
+    
+    App\ArgumentResolver\ArtistPayloadResolver:
+        tags: 
+            - {name: controller.argument_value_resolver}
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
