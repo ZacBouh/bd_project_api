@@ -34,4 +34,11 @@ final class ArtistController extends AbstractController
         $this->artistManager->createArtist($newArtist);
         return $this->json($newArtist);
     }
+
+    #[Route('/api/artists', name: 'artist_get', methods: 'GET')]
+    public function getArtists(): JsonResponse
+    {
+        $artists = $this->artistManager->getAll();
+        return $this->json($artists);
+    }
 }

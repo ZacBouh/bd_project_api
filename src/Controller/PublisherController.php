@@ -17,7 +17,7 @@ final class PublisherController extends AbstractController
         private PublisherManagerService $publisherManagerService
     ) {}
 
-    #[Route('/api/publishers', name: 'publishers', methods: 'GET')]
+    #[Route('/api/publishers', name: 'publishers_get', methods: 'GET')]
     public function getPublishers(): JsonResponse
     {
         /** @var Array<int, Publisher> $publishers */
@@ -26,7 +26,7 @@ final class PublisherController extends AbstractController
         return $this->json($publishers);
     }
 
-    #[Route('/api/publishers', name: 'publishers', methods: 'POST')]
+    #[Route('/api/publishers', name: 'publishers_create', methods: 'POST')]
     public function createPublisher(
         #[MapRequestPayload] Publisher $publisher,
     ): JsonResponse {

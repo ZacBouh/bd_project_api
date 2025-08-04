@@ -24,4 +24,12 @@ final class TitleController extends AbstractController
 
         return $this->json($title);
     }
+
+    #[Route('/titles', name: 'title_get')]
+    public function getTitles(): JsonResponse
+    {
+        /** @var Array<int, Title> $titles */
+        $titles = $this->titleManagerService->getTitles();
+        return $this->json($titles);
+    }
 }

@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Entity\Title;
+use App\Repository\TitleRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 
@@ -10,7 +11,8 @@ class TitleManagerService
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private LoggerInterface $logger
+        private TitleRepository $titleRepository,
+        private LoggerInterface $logger,
     ) {}
 
     public function createTitle(Title $newTitle): Title
@@ -19,5 +21,12 @@ class TitleManagerService
         $this->entityManager->flush();
 
         return $newTitle;
+    }
+
+    public function getTitles(): array
+    {
+        /** @var Array<int, Title> $titles */
+        $titles = $this->titleRepository->findBy([], limit: 200);
+        return $titles;
     }
 }
