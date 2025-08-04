@@ -2,6 +2,7 @@
 
 namespace App\Serializer;
 
+use App\Entity\Title;
 use App\Entity\Artist;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
@@ -27,8 +28,18 @@ class ArtistSerializer implements NormalizerInterface
 
     public function normalize($object, ?string $format = null, array $context = []): array|string|int|float|bool|\ArrayObject|null
     {
+        /** @var Artist $object */
         $data = $this->normalizer->normalize($object, $format, $context);
-        $data['skills'] = array_map(fn($skill) => $skill->getName(), $object->getSkills()->toArray());
+        $skillNames = [];
+        foreach ($object->getSkills() as $skill) {
+            $skillNames[] = $skill->getName();
+        }
+        $data['skills'] = $skillNames;
+        $titlesIds = [];
+        foreach ($object->getTitles() as $title) {
+            $titlesIds[] = $title->getId();
+        }
+        $data['titles'] = $titlesIds;
         return $data;
     }
 }
