@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\PublisherRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -33,9 +35,29 @@ class Publisher
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $description = null;
 
+    # ISO 3166-1 alpha-2 codes (2-letter codes like US, FR, JP)
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $country = null;
+
+    /**
+     * @var Collection<int, Title>
+     */
+    #[ORM\OneToMany(targetEntity: Title::class, mappedBy: 'publisher')]
+    private Collection $titles;
+
+    public function __construct()
+    {
+        $this->titles = new ArrayCollection();
+    }
+
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function getCountry(): ?string
+    {
+        return $this->country;
     }
 
     public function getName(): ?string
@@ -46,6 +68,13 @@ class Publisher
     public function setName(string $name): static
     {
         $this->name = $name;
+
+        return $this;
+    }
+
+    public function setCountry(string $country): static
+    {
+        $this->country = $country;
 
         return $this;
     }
@@ -122,5 +151,35 @@ class Publisher
     public function setUpdatedAtValue(): void
     {
         $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    /**
+     * @return Collection<int, Title>
+     */
+    public function getTitles(): Collection
+    {
+        return $this->titles;
+    }
+
+    public function addtitles(Title $title): static
+    {
+        if (!$this->titles->contains($title)) {
+            $this->titles->add($title);
+            $title->setPublisher($this);
+        }
+
+        return $this;
+    }
+
+    public function removeTitle(Title $title): static
+    {
+        if ($this->titles->removeElement($title)) {
+            // set the owning side to null (unless already changed)
+            if ($title->getPublisher() === $this) {
+                $title->setPublisher(null);
+            }
+        }
+
+        return $this;
     }
 }

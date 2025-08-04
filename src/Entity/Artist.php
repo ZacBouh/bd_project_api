@@ -37,10 +37,17 @@ class Artist
     #[ORM\InverseJoinColumn(name: "skill_name", referencedColumnName: "name")]
     private Collection $skills;
 
+    /**
+     * @var Collection<int, Title>
+     */
+    #[ORM\ManyToMany(targetEntity: Title::class, mappedBy: 'artists')]
+    private Collection $titles;
+
 
     public function __construct()
     {
         $this->skills = new ArrayCollection();
+        $this->titles = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -127,6 +134,33 @@ class Artist
     public function setDeathDate(?\DateTime $deathDate): static
     {
         $this->deathDate = $deathDate;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Title>
+     */
+    public function getTitles(): Collection
+    {
+        return $this->titles;
+    }
+
+    public function addTitle(Title $title): static
+    {
+        if (!$this->titles->contains($title)) {
+            $this->titles->add($title);
+            $title->addArtist($this);
+        }
+
+        return $this;
+    }
+
+    public function removeTitle(Title $title): static
+    {
+        if ($this->titles->removeElement($title)) {
+            $title->removeArtist($this);
+        }
 
         return $this;
     }
