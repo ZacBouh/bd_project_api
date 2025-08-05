@@ -35,11 +35,6 @@ class ArtistSerializer implements NormalizerInterface
             $skillNames[] = $skill->getName();
         }
         $data['skills'] = $skillNames;
-        $titlesIds = [];
-        foreach ($object->getTitles() as $title) {
-            $titlesIds[] = $title->getId();
-        }
-        $data['titles'] = $titlesIds;
         return $data;
     }
 }

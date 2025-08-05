@@ -20,12 +20,6 @@ class Title
     #[ORM\Column(length: 255)]
     private ?string $name = null;
 
-    /**
-     * @var Collection<int, Artist>
-     */
-    #[ORM\ManyToMany(targetEntity: Artist::class, inversedBy: 'titles')]
-    private Collection $artists;
-
     #[ORM\ManyToOne(inversedBy: 'titles')]
     private ?Publisher $publisher = null;
 
@@ -39,9 +33,15 @@ class Title
     #[ORM\Column(length: 2, nullable: true)]
     private ?string $language = null;
 
+    /**
+     * @var Collection<int, ArtistTitleContribution>
+     */
+    #[ORM\OneToMany(targetEntity: ArtistTitleContribution::class, mappedBy: 'title', orphanRemoval: true)]
+    private Collection $artistsContributions;
+
     public function __construct()
     {
-        $this->artists = new ArrayCollection();
+        $this->artistsContributions = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -49,12 +49,12 @@ class Title
         return $this->id;
     }
 
-    public function getLanguage(): ?int
+    public function getLanguage(): ?string
     {
         return $this->language;
     }
 
-    public function getReleaseDate(): ?string
+    public function getReleaseDate(): ?\DateTime
     {
         return $this->releaseDate;
     }
@@ -83,29 +83,6 @@ class Title
         return $this;
     }
 
-    /**
-     * @return Collection<int, Artist>
-     */
-    public function getArtists(): Collection
-    {
-        return $this->artists;
-    }
-
-    public function addArtist(Artist $artist): static
-    {
-        if (!$this->artists->contains($artist)) {
-            $this->artists->add($artist);
-        }
-
-        return $this;
-    }
-
-    public function removeArtist(Artist $artist): static
-    {
-        $this->artists->removeElement($artist);
-
-        return $this;
-    }
 
     public function getPublisher(): ?Publisher
     {
@@ -127,6 +104,36 @@ class Title
     public function setDescription(?string $description): static
     {
         $this->description = $description;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ArtistTitleContribution>
+     */
+    public function getArtistsContributions(): Collection
+    {
+        return $this->artistsContributions;
+    }
+
+    public function addArtistsContribution(ArtistTitleContribution $artistsContribution): static
+    {
+        if (!$this->artistsContributions->contains($artistsContribution)) {
+            $this->artistsContributions->add($artistsContribution);
+            $artistsContribution->setTitle($this);
+        }
+
+        return $this;
+    }
+
+    public function removeArtistsContribution(ArtistTitleContribution $artistsContribution): static
+    {
+        if ($this->artistsContributions->removeElement($artistsContribution)) {
+            // set the owning side to null (unless already changed)
+            if ($artistsContribution->getTitle() === $this) {
+                $artistsContribution->setTitle(null);
+            }
+        }
 
         return $this;
     }

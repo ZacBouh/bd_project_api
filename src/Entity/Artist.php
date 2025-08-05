@@ -38,16 +38,16 @@ class Artist
     private Collection $skills;
 
     /**
-     * @var Collection<int, Title>
+     * @var Collection<int, ArtistTitleContribution>
      */
-    #[ORM\ManyToMany(targetEntity: Title::class, mappedBy: 'artists')]
-    private Collection $titles;
+    #[ORM\OneToMany(targetEntity: ArtistTitleContribution::class, mappedBy: 'artist', orphanRemoval: true)]
+    private Collection $titlesContributions;
 
 
     public function __construct()
     {
         $this->skills = new ArrayCollection();
-        $this->titles = new ArrayCollection();
+        $this->titlesContributions = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -138,28 +138,32 @@ class Artist
         return $this;
     }
 
+
     /**
-     * @return Collection<int, Title>
+     * @return Collection<int, ArtistTitleContribution>
      */
-    public function getTitles(): Collection
+    public function getTitlesContributions(): Collection
     {
-        return $this->titles;
+        return $this->titlesContributions;
     }
 
-    public function addTitle(Title $title): static
+    public function addTitlesContribution(ArtistTitleContribution $titlesContribution): static
     {
-        if (!$this->titles->contains($title)) {
-            $this->titles->add($title);
-            $title->addArtist($this);
+        if (!$this->titlesContributions->contains($titlesContribution)) {
+            $this->titlesContributions->add($titlesContribution);
+            $titlesContribution->setArtist($this);
         }
 
         return $this;
     }
 
-    public function removeTitle(Title $title): static
+    public function removeTitlesContribution(ArtistTitleContribution $titlesContribution): static
     {
-        if ($this->titles->removeElement($title)) {
-            $title->removeArtist($this);
+        if ($this->titlesContributions->removeElement($titlesContribution)) {
+            // set the owning side to null (unless already changed)
+            if ($titlesContribution->getArtist() === $this) {
+                $titlesContribution->setArtist(null);
+            }
         }
 
         return $this;

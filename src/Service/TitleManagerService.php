@@ -3,9 +3,11 @@
 namespace App\Service;
 
 use App\Entity\Title;
+use App\Repository\PublisherRepository;
 use App\Repository\TitleRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Serializer\SerializerInterface;
 
 class TitleManagerService
 {
@@ -13,14 +15,16 @@ class TitleManagerService
         private EntityManagerInterface $entityManager,
         private TitleRepository $titleRepository,
         private LoggerInterface $logger,
+        private SerializerInterface $serializer,
+        private PublisherRepository $publisherRepository,
     ) {}
 
-    public function createTitle(Title $newTitle): Title
+    public function createTitle(array $newTitleContent)
     {
-        $this->entityManager->persist($newTitle);
-        $this->entityManager->flush();
+        $publisher = $this->publisherRepository->findOneBy(['id' => $newTitleContent['publisher']]);
+        $this->logger->warning("Deserialized data : " . $publisher->getName());
 
-        return $newTitle;
+        return $publisher;
     }
 
     public function getTitles(): array
