@@ -7,19 +7,22 @@ use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Serializer\SerializerInterface;
-
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 final class AuthController extends AbstractController
 {
 
     public function __construct(
-        private LoggerInterface $logger
+        private LoggerInterface $logger,
+        private HttpClientInterface $httpClient,
     ) {}
 
     #[Route('/auth/register', name: 'auth_register', methods: 'POST')]
@@ -47,5 +50,34 @@ final class AuthController extends AbstractController
             'message' => 'successfully logged in',
             'user' => $user->getUserIdentifier(),
         ]);
+    }
+
+    #[Route('/auth/oauth2', name: 'auth_oauth_callback', methods: 'GET')]
+    public function googleOauth2Callback(
+        #[MapQueryParameter('code')] string $code,
+        #[MapQueryParameter('state')] string $jsonEncodedState,
+        #[MapQueryParameter('scope')] string $scope,
+    ) {
+        $this->logger->critical("Received oauth2 request { code: $code, state: $jsonEncodedState, scope: '$scope'}");
+        $configResponse = $this->httpClient->request('GET',  'https://accounts.google.com/.well-known/openid-configuration');
+        $openIdConfig = $configResponse->toArray();
+        $tokenEndpoint = $openIdConfig['token_endpoint'];
+        $headers = ['Content-Type' => 'application/x-www-form-urlencoded'];
+        $body = [
+            'code' => $code,
+            'client_id' => $_ENV['GOOGLE_OAUTH_CLIENT_ID'],
+            'client_secret' => $_ENV['GOOGLE_OAUTH_CLIENT_SECRET'],
+            'redirect_uri' => $_ENV['GOOGLE_OAUTH_REDIRECT_URI'],
+            'grant_type' => 'authorization_code'
+        ];
+        // $this->logger->warning("Body generated : " . json_encode($body));
+        // $this->logger->warning("Token endpoint  : " . $tokenEndpoint);
+        $tokenResponse = $this->httpClient->request('POST', $tokenEndpoint, ['headers' => $headers, 'body' => $body]);
+        // $this->logger->critical("Received token response : " . json_encode($tokenResponse->toArray()));
+        $access_token = $tokenResponse->toArray()['access_token'];
+        $this->logger->warning("access_token : $access_token");
+        $userInfoResponse = $this->httpClient->request('GET', $openIdConfig["userinfo_endpoint"], ['headers' => ['Authorization' => "Bearer $access_token"]]);
+        $this->logger->warning("retrieved user info from google : " . json_encode($userInfoResponse->toArray()));
+        return $this->redirect('http://localhost:8082/titles');
     }
 }

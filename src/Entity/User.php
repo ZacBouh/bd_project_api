@@ -48,11 +48,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private ?string $password = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?string $googleSub = null;
+
     public function getId(): ?int
     {
         return $this->id;
     }
 
+    public function getGoogleSub(): ?string
+    {
+        return $this->googleSub;
+    }
 
     public function getCreatedAt(): ?\DateTimeImmutable
     {
@@ -79,9 +86,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
         return $this;
     }
+
     public function setPseudo(string $pseudo): static
     {
         $this->pseudo = $pseudo;
+
+        return $this;
+    }
+
+    public function setGoogleSub(string $googleSub): static
+    {
+        $this->googleSub = $googleSub;
 
         return $this;
     }
