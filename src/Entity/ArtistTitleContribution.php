@@ -3,10 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\ArtistTitleContributionRepository;
-use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use Doctrine\ORM\Mapping\JoinColumn;
 
 #[ORM\Entity(repositoryClass: ArtistTitleContributionRepository::class)]
 class ArtistTitleContribution
@@ -24,19 +22,11 @@ class ArtistTitleContribution
     #[ORM\JoinColumn(nullable: false)]
     private ?Title $title = null;
 
-    /**
-     * @var Collection<int, Skill>
-     */
-    #[ORM\ManyToMany(targetEntity: Skill::class)]
-    #[ORM\JoinTable(name: "artist_title_contribution_skill")]
-    #[ORM\JoinColumn(name: "artist_id", referencedColumnName: 'id', onDelete: "CASCADE")]
-    #[ORM\InverseJoinColumn(name: "skill_name", referencedColumnName: "name")]
-    private Collection $skills;
+    #[ORM\ManyToOne(targetEntity: Skill::class)]
+    #[ORM\JoinColumn(nullable: false, referencedColumnName: "name", name: 'skill_name')]
+    private ?Skill $skill = null;
 
-    public function __construct()
-    {
-        $this->skills = new ArrayCollection();
-    }
+    public function __construct() {}
 
     public function getId(): ?int
     {
@@ -67,27 +57,18 @@ class ArtistTitleContribution
         return $this;
     }
 
+    public function setSkill(Skill $skill): static
+    {
+        $this->skill = $skill;
+
+        return $this;
+    }
+
     /**
      * @return Collection<int, Skill>
      */
-    public function getSkills(): Collection
+    public function getSkill(): Skill
     {
-        return $this->skills;
-    }
-
-    public function addSkill(Skill $skill): static
-    {
-        if (!$this->skills->contains($skill)) {
-            $this->skills->add($skill);
-        }
-
-        return $this;
-    }
-
-    public function removeSkill(Skill $skill): static
-    {
-        $this->skills->removeElement($skill);
-
-        return $this;
+        return $this->skill;
     }
 }
