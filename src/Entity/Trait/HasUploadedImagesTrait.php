@@ -19,8 +19,8 @@ trait HasUploadedImagesTrait
     private ?Collection $uploadedImages = null;
 
     #[Groups(['title:read'])]
-    #[ORM\Column(nullable: true)]
-    private ?int $coverImageId = null;
+    #[ORM\ManyToOne(targetEntity: UploadedImage::class, cascade: ['persist'])]
+    private ?UploadedImage $coverImage = null;
 
     /**
      * @return Collection<int, UploadedImage>
@@ -51,12 +51,12 @@ trait HasUploadedImagesTrait
     {
         if ($image instanceof UploadedImage) {
             $this->getUploadedImages()->removeElement($image);
-            if ($this->coverImageId === $image->getId()) $this->coverImageId = null;
+            if ($this->coverImage === $image) $this->coverImage = null;
             return $this;
         }
 
         if (is_int($image)) {
-            if ($this->coverImageId === $image) $this->coverImageId = null;
+            if ($this->coverImage->getId() === $image) $this->coverImage = null;
             $image = $this->getUploadedImagesById($image);
             if (is_null($image)) return $this;
             $this->getUploadedImages()->removeElement($image);
@@ -68,16 +68,8 @@ trait HasUploadedImagesTrait
 
     public function getCoverImage(): ?UploadedImage
     {
-        $coverImageId = $this->coverImageId;
-        if (is_null($coverImageId)) {
-            return null;
-        }
-        foreach ($this->getUploadedImages() as $image) {
-            if ($image->getId() === $coverImageId) {
-                return $image;
-            }
-        }
-        return null;
+
+        return $this->coverImage;
     }
 
     public function getUploadedImageById(int $imageId): ?UploadedImage
@@ -92,12 +84,8 @@ trait HasUploadedImagesTrait
 
     public function setCoverImage(?UploadedImage $coverImage): static
     {
-        if (is_null($coverImage)) {
-            $this->coverImageId = null;
-            return $this;
-        }
         $this->addUploadedImage($coverImage);
-        $this->coverImageId = $coverImage->getId();
+        $this->coverImage = $coverImage;
         return $this;
     }
 }
