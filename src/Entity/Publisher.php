@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: PublisherRepository::class)]
 #[ORM\HasLifecycleCallbacks]
@@ -15,28 +16,36 @@ class Publisher
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['publisher:read'])]
     private ?int $id = null;
 
+    #[Groups(['publisher:read'])]
     #[ORM\Column(length: 255)]
     private ?string $name = null;
 
+    #[Groups(['publisher:read'])]
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     private ?\DateTime $birthDate = null;
 
+    #[Groups(['publisher:read'])]
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     private ?\DateTime $deathDate = null;
 
     #[ORM\Column]
+    #[Groups(['publisher:read'])]
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\Column]
+    #[Groups(['publisher:read'])]
     private ?\DateTimeImmutable $updatedAt = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['publisher:read'])]
     private ?string $description = null;
 
     # ISO 3166-1 alpha-2 codes (2-letter codes like US, FR, JP)
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['publisher:read'])]
     private ?string $country = null;
 
     /**
@@ -140,7 +149,7 @@ class Publisher
     }
 
     #[ORM\PrePersist]
-    public function setCreatedAtValue(): void
+    public function timestampOnCreate(): void
     {
         $now = new \DateTimeImmutable();
         $this->createdAt = $now;
@@ -148,7 +157,7 @@ class Publisher
     }
 
     #[ORM\PreUpdate]
-    public function setUpdatedAtValue(): void
+    public function timestampOnUpdate(): void
     {
         $this->updatedAt = new \DateTimeImmutable();
     }

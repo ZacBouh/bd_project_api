@@ -7,7 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\DBAL\Types\Types;
-
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: TitleRepository::class)]
 class Title
@@ -15,20 +15,25 @@ class Title
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['title:read'])]
     private ?int $id = null;
 
+    #[Groups(['title:read'])]
     #[ORM\Column(length: 255)]
     private ?string $name = null;
 
     #[ORM\ManyToOne(inversedBy: 'titles')]
     private ?Publisher $publisher = null;
 
+    #[Groups(['title:read'])]
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     private ?\DateTime  $releaseDate = null;
 
+    #[Groups(['title:read'])]
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $description = null;
 
+    #[Groups(['title:read'])]
     #  ISO 639-1 (2-letter codes like en, fr, es)
     #[ORM\Column(length: 2, nullable: true)]
     private ?string $language = null;
@@ -36,7 +41,7 @@ class Title
     /**
      * @var Collection<int, ArtistTitleContribution>
      */
-    #[ORM\OneToMany(targetEntity: ArtistTitleContribution::class, mappedBy: 'title', orphanRemoval: true)]
+    #[ORM\OneToMany(targetEntity: ArtistTitleContribution::class, mappedBy: 'title', orphanRemoval: true, cascade: ['remove'])]
     private Collection $artistsContributions;
 
     public function __construct()

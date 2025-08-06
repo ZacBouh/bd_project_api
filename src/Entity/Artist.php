@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: ArtistRepository::class)]
 class Artist
@@ -14,23 +15,30 @@ class Artist
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['artist:read'])]
     private ?int $id = null;
 
+    #[Groups(['artist:read'])]
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $firstName = null;
 
+    #[Groups(['artist:read'])]
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $lastName = null;
 
+    #[Groups(['artist:read'])]
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $pseudo = null;
 
+    #[Groups(['artist:read'])]
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     private ?\DateTime $birthDate = null;
 
+    #[Groups(['artist:read'])]
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     private ?\DateTime $deathDate = null;
 
+    #[Groups(['artist:read'])]
     #[ORM\ManyToMany(targetEntity: Skill::class)]
     #[ORM\JoinTable(name: "artist_skills")]
     #[ORM\JoinColumn(name: "artist_id", referencedColumnName: 'id', onDelete: "CASCADE")]

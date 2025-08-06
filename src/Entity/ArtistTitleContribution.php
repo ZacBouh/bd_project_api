@@ -19,7 +19,7 @@ class ArtistTitleContribution
     private ?Artist $artist = null;
 
     #[ORM\ManyToOne(inversedBy: 'artistsContributions')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private ?Title $title = null;
 
     #[ORM\ManyToOne(targetEntity: Skill::class)]
@@ -64,9 +64,6 @@ class ArtistTitleContribution
         return $this;
     }
 
-    /**
-     * @return Collection<int, Skill>
-     */
     public function getSkill(): Skill
     {
         return $this->skill;
