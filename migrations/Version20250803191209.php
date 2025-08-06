@@ -14,7 +14,7 @@ final class Version20250803191209 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return '';
+        return 'Adds the `publisher` table';
     }
 
     public function up(Schema $schema): void

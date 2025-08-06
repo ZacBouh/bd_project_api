@@ -14,7 +14,7 @@ final class Version20250806004456 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return '';
+        return 'Adds `artist_title_contribution` table. Removes `title_artist` relation table.';
     }
 
     public function up(Schema $schema): void

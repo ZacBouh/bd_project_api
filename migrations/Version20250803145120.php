@@ -14,7 +14,7 @@ final class Version20250803145120 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return '';
+        return 'Adds the `artist`, `skill` tables and `artist_skills` relation table. Adds `created_at` and `updated_at` to `user` table.';
     }
 
     public function up(Schema $schema): void

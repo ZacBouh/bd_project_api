@@ -14,7 +14,7 @@ final class Version20250803204020 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return '';
+        return 'Adds `title` table and `title_artist` relation table. Adds `country` column in `publisher` table';
     }
 
     public function up(Schema $schema): void

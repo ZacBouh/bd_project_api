@@ -14,7 +14,7 @@ final class Version20250805130121 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return '';
+        return 'Adds `google_sub` column on `user` table';
     }
 
     public function up(Schema $schema): void
