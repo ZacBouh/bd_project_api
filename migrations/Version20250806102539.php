@@ -14,7 +14,7 @@ final class Version20250806102539 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return '';
+        return 'Adds foreign key constraint on `title_id` and ON DELETE CASCADE to `artist_title_contribution` table.';
     }
 
     public function up(Schema $schema): void

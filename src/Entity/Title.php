@@ -2,16 +2,20 @@
 
 namespace App\Entity;
 
+use App\Entity\Trait\HasUploadedImagesTrait;
 use App\Repository\TitleRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\DBAL\Types\Types;
+use InvalidArgumentException;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: TitleRepository::class)]
 class Title
 {
+    use HasUploadedImagesTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -139,7 +143,6 @@ class Title
                 $artistsContribution->setTitle(null);
             }
         }
-
         return $this;
     }
 }
