@@ -22,11 +22,10 @@ final class TitleController extends AbstractController
     public function createTitle(
         Request $request
     ): JsonResponse {
-        $contentArray = $request->toArray();
-        $this->logger->warning("received content : " . $request->getContent());
-        $this->titleManagerService->createTitle($contentArray);
+        $this->logger->warning("Received Create Title Request");
+        $newTitle = $this->titleManagerService->createTitle($request->request, $request->files);
 
-        return $this->json($contentArray);
+        return $this->json($newTitle);
     }
 
     #[Route('/api/titles', name: 'title_get')]

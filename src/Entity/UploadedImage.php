@@ -4,7 +4,7 @@ namespace App\Entity;
 
 use App\Repository\UploadedImageRepository;
 use Doctrine\ORM\Mapping as ORM;
-use Vich\UploaderBundle\Entity\File;
+use Symfony\Component\HttpFoundation\File\File;
 use Vich\UploaderBundle\Mapping\Annotation as Vich;
 
 #[ORM\Entity(repositoryClass: UploadedImageRepository::class)]
@@ -39,6 +39,7 @@ class UploadedImage
 
     #[ORM\Column(length: 20, nullable: true)]
     private ?string $imageDimensions = null;
+
 
     public function getId(): ?int
     {

@@ -4,6 +4,7 @@ namespace App\Service;
 
 use App\Entity\ArtistTitleContribution;
 use App\Entity\Title;
+use App\Entity\UploadedImage;
 use App\Repository\ArtistRepository;
 use App\Repository\PublisherRepository;
 use App\Repository\SkillRepository;
@@ -11,6 +12,9 @@ use App\Repository\TitleRepository;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\HttpFoundation\FileBag;
+use Symfony\Component\HttpFoundation\InputBag;
 use Symfony\Component\Serializer\SerializerInterface;
 
 class TitleManagerService
@@ -25,18 +29,17 @@ class TitleManagerService
         private SkillRepository $skillRepository,
     ) {}
 
-    public function createTitle(array $newTitleContent)
+    public function createTitle(InputBag $newTitleContent, ?FileBag $files = null)
     {
         $newTitle = new Title();
-        $newTitle->setDescription($newTitleContent['description']);
-        $newTitle->setLanguage($newTitleContent['language']);
-        $newTitle->setName($newTitleContent['name']);
-        $newTitle->setReleaseDate(new DateTime($newTitleContent['releaseDate']));
-        $publisher = $this->publisherRepository->findOneBy(['id' => $newTitleContent['publisher']]);
+        $newTitle->setDescription($newTitleContent->get('description'));
+        $newTitle->setLanguage($newTitleContent->get('language'));
+        $newTitle->setName($newTitleContent->get('name'));
+        $newTitle->setReleaseDate(new DateTime($newTitleContent->get('releaseDate')));
+        $publisher = $this->publisherRepository->findOneBy(['id' => $newTitleContent->get('publisher')]);
         $newTitle->setPublisher($publisher);
-        $this->logger->warning("Deserialized data : " . $publisher->getName());
 
-        foreach ($newTitleContent['artistsContributions'] as $contributionData) {
+        foreach ($newTitleContent->all('artistsContributions') as $contributionData) {
             $artist = $this->artistRepository->findOneBy(['id' => $contributionData['artist']]);
             $skills = $this->skillRepository->findBy(['name' => $contributionData['skills']]);
             foreach ($skills as $skill) {
@@ -48,6 +51,19 @@ class TitleManagerService
                 $this->entityManager->persist($contribution);
             }
         }
+
+        if (!is_null($files)) {
+            $uploadedFile = $files->get('coverImageFile');
+            if ($uploadedFile instanceof UploadedFile) {
+                $coverImage = new UploadedImage();
+                $coverImage->setFile($uploadedFile);
+                $coverImage->setImageName("Cover");
+
+                $newTitle->setCoverImage($coverImage);
+                $this->entityManager->persist($coverImage);
+            }
+        }
+
         $this->entityManager->persist($newTitle);
         $this->entityManager->flush();
         return $newTitle;

@@ -3,6 +3,7 @@
 namespace App\Entity\Trait;
 
 use App\Entity\UploadedImage;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Doctrine\ORM\Mapping as ORM;
@@ -24,14 +25,22 @@ trait HasUploadedImagesTrait
     /**
      * @return Collection<int, UploadedImage>
      */
-    public function getUploadedImages(): Collection
+    public function getUploadedImages(): ?Collection
     {
+        if (is_null($this->uploadedImages)) {
+            $this->uploadedImages = new ArrayCollection();
+        }
         return $this->uploadedImages;
+    }
+    public function setUploadedImages(?Collection $uploadedImages): static
+    {
+        $this->uploadedImages = $uploadedImages ?? new ArrayCollection();
+        return $this;
     }
 
     public function addUploadedImage(UploadedImage $uploadedImage): static
     {
-        if (!$this->uploadedImages->contains($uploadedImage)) {
+        if (!$this->getUploadedImages()->contains($uploadedImage)) {
             $this->uploadedImages->add($uploadedImage);
         }
 
@@ -41,7 +50,7 @@ trait HasUploadedImagesTrait
     public function removeUploadedImage(UploadedImage | int $image): static
     {
         if ($image instanceof UploadedImage) {
-            $this->uploadedImages->removeElement($image);
+            $this->getUploadedImages()->removeElement($image);
             if ($this->coverImageId === $image->getId()) $this->coverImageId = null;
             return $this;
         }
@@ -50,7 +59,7 @@ trait HasUploadedImagesTrait
             if ($this->coverImageId === $image) $this->coverImageId = null;
             $image = $this->getUploadedImagesById($image);
             if (is_null($image)) return $this;
-            $this->uploadedImages->removeElement($image);
+            $this->getUploadedImages()->removeElement($image);
             return $this;
         }
 
@@ -63,7 +72,7 @@ trait HasUploadedImagesTrait
         if (is_null($coverImageId)) {
             return null;
         }
-        foreach ($this->uploadedImages as $image) {
+        foreach ($this->getUploadedImages() as $image) {
             if ($image->getId() === $coverImageId) {
                 return $image;
             }
@@ -73,7 +82,7 @@ trait HasUploadedImagesTrait
 
     public function getUploadedImageById(int $imageId): ?UploadedImage
     {
-        foreach ($this->uploadedImages as $image) {
+        foreach ($this->getUploadedImages() as $image) {
             if ($image->getId() === $imageId) {
                 return $image;
             }
@@ -87,7 +96,7 @@ trait HasUploadedImagesTrait
             $this->coverImageId = null;
             return $this;
         }
-
+        $this->addUploadedImage($coverImage);
         $this->coverImageId = $coverImage->getId();
         return $this;
     }
