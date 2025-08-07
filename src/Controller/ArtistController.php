@@ -3,18 +3,14 @@
 namespace App\Controller;
 
 use App\ArgumentResolver\ArtistPayloadResolver;
-use App\Entity\Artist;
 use App\Repository\ArtistRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 use App\Repository\SkillRepository;
 use App\Service\ArtistManagerService;
-use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 
 final class ArtistController extends AbstractController
 {

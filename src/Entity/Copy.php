@@ -11,6 +11,7 @@ use App\Repository\CopyRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: CopyRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class Copy implements HasUploadedImagesInterface
 {
     use TimestampableTrait;
@@ -40,7 +41,7 @@ class Copy implements HasUploadedImagesInterface
     private ?float $boughtForPrice = null;
 
     #[ORM\Column(nullable: true, enumType: PriceCurrency::class)]
-    private ?string $boughtForCurrency = null;
+    private ?PriceCurrency $boughtForCurrency = null;
 
     public function getId(): ?int
     {
@@ -122,12 +123,12 @@ class Copy implements HasUploadedImagesInterface
     /**
      * @return PriceCurrency|null
      */
-    public function getBoughtForCurrency(): ?string
+    public function getBoughtForCurrency(): ?PriceCurrency
     {
         return $this->boughtForCurrency;
     }
 
-    public function setBoughtForCurrency(?string $boughtForCurrency): static
+    public function setBoughtForCurrency(?PriceCurrency $boughtForCurrency): static
     {
         $this->boughtForCurrency = $boughtForCurrency;
 
