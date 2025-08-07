@@ -16,28 +16,14 @@ class PublisherRepository extends ServiceEntityRepository
         parent::__construct($registry, Publisher::class);
     }
 
-//    /**
-//     * @return Publisher[] Returns an array of Publisher objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('p')
-//            ->andWhere('p.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('p.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
-
-//    public function findOneBySomeField($value): ?Publisher
-//    {
-//        return $this->createQueryBuilder('p')
-//            ->andWhere('p.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
+    public function findWithAllRelations(int $limit = 200): array
+    {
+        return $this->createQueryBuilder('p')
+            ->leftJoin('p.titles', 't')->addSelect('t')
+            ->leftJoin('t.uploadedImages', 'timg')->addSelect('timg')
+            ->leftJoin('p.uploadedImages', 'pimg')->addSelect('pimg')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
 }

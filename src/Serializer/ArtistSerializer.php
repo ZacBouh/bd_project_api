@@ -41,7 +41,7 @@ class ArtistSerializer implements NormalizerInterface
                 $titlesContributions[$id]['skills'][] = $contribution->getSkill()->getName();
             } else {
                 $titlesContributions[$id] = [
-                    'artist' => $contribution->getArtist()->getId(),
+                    'artist' => $object->getId(),
                     'title' => $contribution->getTitle()->getId(),
                     'skills' => [$contribution->getSkill()->getName()]
                 ];

@@ -179,4 +179,11 @@ class Artist
 
         return $this;
     }
+
+    public function getFullName(): string
+    {
+        $firstName = $this->firstName;
+        $lastName = $this->lastName;
+        return "$firstName $lastName";
+    }
 }

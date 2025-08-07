@@ -36,8 +36,9 @@ class TitleSerializer implements NormalizerInterface
             if (isset($artistsContributions[$id])) {
                 $artistsContributions[$id]['skills'][] = $contribution->getSkill()->getName();
             } else {
+                $artist = $contribution->getArtist();
                 $artistsContributions[$id] = [
-                    'artist' => $contribution->getArtist()->getId(),
+                    'artist' => ['id' => $artist->getId(), 'fullName' => $artist->getFullName()],
                     'title' => $contribution->getTitle()->getId(),
                     'skills' => [$contribution->getSkill()->getName()]
                 ];

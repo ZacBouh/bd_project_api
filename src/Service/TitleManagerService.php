@@ -55,7 +55,6 @@ class TitleManagerService
         if (!is_null($files)) {
             $uploadedFile = $files->get('coverImageFile');
             if ($uploadedFile instanceof UploadedFile) {
-                $this->logger->warning("YES THERE IS A COVER IMAGE");
                 $coverImage = new UploadedImage();
                 $coverImage->setFile($uploadedFile);
                 $coverImage->setImageName("Cover");

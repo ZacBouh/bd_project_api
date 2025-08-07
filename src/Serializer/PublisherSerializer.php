@@ -31,7 +31,7 @@ class PublisherSerializer implements NormalizerInterface
     public function normalize($object, ?string $format = null, array $context = []): array|string|int|float|bool|\ArrayObject|null
     {
         /** @var Publisher $object */
-        $data = $this->normalizer->normalize($object, $format, $context);
+        $data = $this->normalizer->normalize($object, $format, ['groups' => ['publisher:read']]);
         $titles = [];
         foreach ($object->getTitles() as $title) {
             $titles[] = $title->getId();
