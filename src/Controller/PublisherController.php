@@ -10,7 +10,6 @@ use App\Entity\Publisher;
 use App\Service\PublisherManagerService;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 
 final class PublisherController extends AbstractController
 {

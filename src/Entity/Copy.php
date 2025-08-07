@@ -1,0 +1,137 @@
+<?php
+
+namespace App\Entity;
+
+use App\Contract\Entity\HasUploadedImagesInterface;
+use App\Entity\Trait\HasUploadedImagesTrait;
+use App\Entity\Traits\TimestampableTrait;
+use App\Enum\CopyCondition;
+use App\Enum\PriceCurrency;
+use App\Repository\CopyRepository;
+use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\Mapping as ORM;
+
+#[ORM\Entity(repositoryClass: CopyRepository::class)]
+class Copy implements HasUploadedImagesInterface
+{
+    use TimestampableTrait;
+    use HasUploadedImagesTrait;
+
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column]
+    private ?int $id = null;
+
+    #[ORM\Column]
+    private ?int $ownerId = null;
+
+    #[ORM\Column]
+    private ?int $tileId = null;
+
+    #[ORM\Column(enumType: CopyCondition::class)]
+    private ?CopyCondition $copyCondition = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?float $price = null;
+
+    #[ORM\Column(nullable: true, enumType: PriceCurrency::class)]
+    private ?PriceCurrency $currency = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?float $boughtForPrice = null;
+
+    #[ORM\Column(nullable: true, enumType: PriceCurrency::class)]
+    private ?string $boughtForCurrency = null;
+
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
+
+    public function getOwnerId(): ?int
+    {
+        return $this->ownerId;
+    }
+
+    public function setOwnerId(int $ownerId): static
+    {
+        $this->ownerId = $ownerId;
+
+        return $this;
+    }
+
+    public function getTileId(): ?int
+    {
+        return $this->tileId;
+    }
+
+    public function setTileId(int $tileId): static
+    {
+        $this->tileId = $tileId;
+
+        return $this;
+    }
+
+    public function getCopyCondition(): ?CopyCondition
+    {
+        return $this->copyCondition;
+    }
+
+    public function setCopyCondition(CopyCondition $copyCondition): static
+    {
+        $this->copyCondition = $copyCondition;
+
+        return $this;
+    }
+
+    public function getPrice(): ?float
+    {
+        return $this->price;
+    }
+
+    public function setPrice(?float $price): static
+    {
+        $this->price = $price;
+
+        return $this;
+    }
+
+    public function getCurrency(): ?PriceCurrency
+    {
+        return $this->currency;
+    }
+
+    public function setCurrency(?PriceCurrency $currency): static
+    {
+        $this->currency = $currency;
+
+        return $this;
+    }
+
+    public function getBoughtForPrice(): ?float
+    {
+        return $this->boughtForPrice;
+    }
+
+    public function setBoughtForPrice(?float $boughtForPrice): static
+    {
+        $this->boughtForPrice = $boughtForPrice;
+
+        return $this;
+    }
+
+    /**
+     * @return PriceCurrency|null
+     */
+    public function getBoughtForCurrency(): ?string
+    {
+        return $this->boughtForCurrency;
+    }
+
+    public function setBoughtForCurrency(?string $boughtForCurrency): static
+    {
+        $this->boughtForCurrency = $boughtForCurrency;
+
+        return $this;
+    }
+}
