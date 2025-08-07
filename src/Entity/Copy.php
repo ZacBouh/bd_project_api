@@ -4,11 +4,10 @@ namespace App\Entity;
 
 use App\Contract\Entity\HasUploadedImagesInterface;
 use App\Entity\Trait\HasUploadedImagesTrait;
-use App\Entity\Traits\TimestampableTrait;
+use App\Entity\Trait\TimestampableTrait;
 use App\Enum\CopyCondition;
 use App\Enum\PriceCurrency;
 use App\Repository\CopyRepository;
-use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: CopyRepository::class)]
