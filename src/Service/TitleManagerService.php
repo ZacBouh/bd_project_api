@@ -27,6 +27,7 @@ class TitleManagerService
         private PublisherRepository $publisherRepository,
         private ArtistRepository $artistRepository,
         private SkillRepository $skillRepository,
+        private UploadedImageService $imageService,
     ) {}
 
     public function createTitle(InputBag $newTitleContent, ?FileBag $files = null)
@@ -53,15 +54,7 @@ class TitleManagerService
         }
 
         if (!is_null($files)) {
-            $uploadedFile = $files->get('coverImageFile');
-            if ($uploadedFile instanceof UploadedFile) {
-                $coverImage = new UploadedImage();
-                $coverImage->setFile($uploadedFile);
-                $coverImage->setImageName("Cover");
-
-                $newTitle->setCoverImage($coverImage);
-                $this->entityManager->persist($coverImage);
-            }
+            $this->imageService->saveUploadedCoverImage($newTitle, $files, "Cover")
         }
 
         $this->entityManager->persist($newTitle);

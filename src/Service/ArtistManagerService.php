@@ -20,7 +20,8 @@ class ArtistManagerService
         private EntityManagerInterface $entityManager,
         private SkillRepository $skillRepository,
         private LoggerInterface $logger,
-        private ArtistRepository $artistRepository
+        private ArtistRepository $artistRepository,
+        private UploadedImageService $imageService,
     ) {}
 
     public function createArtist(InputBag $newArtistContent, ?FileBag $files): Artist
@@ -35,17 +36,9 @@ class ArtistManagerService
         foreach ($skills as $skill) {
             $newArtist->addSkill($skill);
         }
-        if (!is_null($files)) {
-            $uploadedFile = $files->get('coverImageFile');
-            if ($uploadedFile instanceof UploadedFile) {
-                $this->logger->warning("THERE IS A COVER IMAGE");
-                $coverImage = new UploadedImage();
-                $coverImage->setFile($uploadedFile);
-                $coverImage->setImageName("Artist Picture");
 
-                $newArtist->setCoverImage($coverImage);
-                $this->entityManager->persist($coverImage);
-            }
+        if (!is_null($files)) {
+            $this->imageService->saveUploadedCoverImage($newArtist, $files, "Artist Picture");
         }
 
         $this->entityManager->persist($newArtist);

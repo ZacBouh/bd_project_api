@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Contract\Entity\HasUploadedImagesInterface;
 use App\Entity\Trait\HasUploadedImagesTrait;
 use App\Repository\ArtistRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -11,7 +12,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: ArtistRepository::class)]
-class Artist
+class Artist implements HasUploadedImagesInterface
 {
     use HasUploadedImagesTrait;
 

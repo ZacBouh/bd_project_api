@@ -48,8 +48,7 @@ class CopyManagerService
         if (!CopyCondition::tryFrom($dataCopyConditionValue)) {
             throw new \InvalidArgumentException("Invalid copy condition : " . $dataCopyConditionValue);
         }
-        $newCopy->setCopyCondition(CopyCondition::from($dataCopyConditionValue));
-        if (!is_null($files) && !is_null($files->get('coverImageFile'))) {
+        $newCopy->setCopyCondition(CopyCondition::from($dataCopyConditionValue)); {
             $this->imageService->saveUploadedCoverImage($newCopy, $files->get('coverImageFile'), "Copy Picture");
         }
 

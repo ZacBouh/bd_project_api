@@ -18,12 +18,15 @@ class UploadedImageService
         private EntityManagerInterface $entityManager,
     ) {}
 
-    public function saveUploadedCoverImage(HasUploadedImagesInterface $entity, UploadedFile $file, ?string $imageName = "Cover Image")
+    public function saveUploadedCoverImage(HasUploadedImagesInterface $entity, FileBag $files, ?string $imageName = "Cover Image")
     {
-        if (!$file instanceof UploadedFile) {
-            throw new \InvalidArgumentException("File argument passed to saveUploadedCoverImage is not Symfony\Component\HttpFoundation\File\UploadedFile");
+        $file = $files->get('coverImageFile');
+        if (is_null($file)) {
+            return false;
         }
-
+        if (!$file instanceof UploadedFile) {
+            throw new \InvalidArgumentException("File argument passed to saveUploadedCoverImage is not a FileBag");
+        }
         $coverImage = new UploadedImage();
         $coverImage->setFile($file);
         $coverImage->setImageName($imageName);

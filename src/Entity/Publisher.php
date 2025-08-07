@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Contract\Entity\HasUploadedImagesInterface;
 use App\Entity\Trait\HasUploadedImagesTrait;
 use App\Repository\PublisherRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -12,7 +13,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: PublisherRepository::class)]
 #[ORM\HasLifecycleCallbacks]
-class Publisher
+class Publisher implements HasUploadedImagesInterface
 {
     use HasUploadedImagesTrait;
 

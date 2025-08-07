@@ -17,6 +17,7 @@ class PublisherManagerService
         private EntityManagerInterface $entityManager,
         private PublisherRepository $publisherRepository,
         private LoggerInterface $logger,
+        private UploadedImageService $imageService,
     ) {}
 
     public function createPublisher(InputBag $newPublisherContent, ?FileBag $files): Publisher
@@ -28,15 +29,7 @@ class PublisherManagerService
         $newPublisher->setName($newPublisherContent->get('name'));
 
         if (!is_null($files)) {
-            $uploadedFile = $files->get('coverImageFile');
-            if ($uploadedFile instanceof UploadedFile) {
-                $coverImage = new UploadedImage();
-                $coverImage->setFile($uploadedFile);
-                $coverImage->setImageName("Cover");
-
-                $newPublisher->setCoverImage($coverImage);
-                $this->entityManager->persist($coverImage);
-            }
+            $this->imageService->saveUploadedCoverImage($newPublisher, $files, "Publisher Logo");
         }
 
         $this->entityManager->persist($newPublisher);
