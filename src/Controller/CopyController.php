@@ -26,4 +26,15 @@ final class CopyController extends AbstractController
 
         return $this->json($createdCopy);
     }
+
+    #[Route('/api/copy', name: 'copy_get', methods: 'GET')]
+    public function getCopies(
+        Request $request,
+    ): JsonResponse {
+        $this->logger->warning('Received Create Copy Request');
+
+        $data = $this->copyService->getCopies();
+
+        return $this->json($data);
+    }
 }

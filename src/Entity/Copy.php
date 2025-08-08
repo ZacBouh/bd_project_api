@@ -26,7 +26,7 @@ class Copy implements HasUploadedImagesInterface
     private ?int $ownerId = null;
 
     #[ORM\Column]
-    private ?int $tileId = null;
+    private ?int $titleId = null;
 
     #[ORM\Column(enumType: CopyCondition::class)]
     private ?CopyCondition $copyCondition = null;
@@ -60,14 +60,14 @@ class Copy implements HasUploadedImagesInterface
         return $this;
     }
 
-    public function getTileId(): ?int
+    public function getTitleId(): ?int
     {
-        return $this->tileId;
+        return $this->titleId;
     }
 
-    public function setTileId(int $tileId): static
+    public function setTitleId(int $titleId): static
     {
-        $this->tileId = $tileId;
+        $this->titleId = $titleId;
 
         return $this;
     }
