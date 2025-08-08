@@ -25,12 +25,12 @@ services:
     App\ArgumentResolver\ArtistPayloadResolver:
         tags: 
             - {name: controller.argument_value_resolver}
-    
-    App\Serializer\ArtistSerializer:
-        tags:
-            - {name: 'serializer.normalizer', priority: 500}
-    App\Serializer\PublisherSerializer:
-        tags:
-            - {name: 'serializer.normalizer', priority: 500}
+        
+    App\DTO\Builder\DTOBuilder:
+        shared: false
+    App\DTO\Artist\ArtistReadDTOBuilder:
+        shared: false
+    App\DTO\Publisher\PublisherDTOBuilder:
+        shared: false
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

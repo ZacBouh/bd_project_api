@@ -6,6 +6,7 @@ use App\Repository\UploadedImageRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Serializer\Attribute\Ignore;
 use Vich\UploaderBundle\Mapping\Annotation as Vich;
 
 #[ORM\Entity(repositoryClass: UploadedImageRepository::class)]
@@ -15,36 +16,39 @@ class UploadedImage
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['titleReadDTO', 'artist:read'])]
+    #[Groups(['titleReadDTO', 'artist:read', 'uploadedImage:read'])]
+
     private ?int $id = null;
 
+    #[Ignore] // This exclude the property from any serialization
     #[Vich\UploadableField(mapping: 'uploaded_image', fileNameProperty: 'fileName', size: 'fileSize', originalName: 'originalFileName')]
     private ?File $file = null;
 
-    #[Groups('titleReadDTO')]
+    #[Groups(['titleReadDTO', 'uploadedImage:read'])]
     #[ORM\Column(length: 255)]
     private ?string $imageName = null;
 
-    #[Groups('titleReadDTO')]
+    #[Groups(['titleReadDTO', 'uploadedImage:read'])]
     #[ORM\Column(nullable: true)]
     private ?int $fileSize = null;
 
-    #[Groups('titleReadDTO')]
+    #[Groups(['titleReadDTO', 'uploadedImage:read'])]
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $updatedAt = null;
 
-    #[Groups('titleReadDTO')]
+    #[Groups(['titleReadDTO', 'uploadedImage:read'])]
     #[ORM\Column(length: 255)]
     private ?string $fileName = null;
 
+    #[Groups(['titleReadDTO', 'uploadedImage:read'])]
     #[ORM\Column(length: 255)]
     private ?string $originalFileName = null;
 
-    #[Groups('titleReadDTO')]
+    #[Groups(['titleReadDTO', 'uploadedImage:read'])]
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $fileMimeType = null;
 
-    #[Groups('titleReadDTO')]
+    #[Groups(['titleReadDTO', 'uploadedImage:read'])]
     #[ORM\Column(length: 20, nullable: true)]
     private ?string $imageDimensions = null;
 

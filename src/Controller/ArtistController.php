@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\ArgumentResolver\ArtistPayloadResolver;
+use App\DTO\Artist\ArtistReadDTOBuilder;
 use App\Repository\ArtistRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -19,6 +20,7 @@ final class ArtistController extends AbstractController
         private ArtistManagerService $artistManager,
         private ArtistRepository $artistRepository,
         private LoggerInterface $logger,
+        private ArtistReadDTOBuilder $dtoBuilder,
     ) {}
 
     #[Route('/api/skills', name: 'artist_skills', methods: 'GET')]
@@ -41,8 +43,15 @@ final class ArtistController extends AbstractController
     #[Route('/api/artists', name: 'artist_get', methods: 'GET')]
     public function getArtists(): JsonResponse
     {
-        // $artists = $this->artistManager->getAll();
-        $artists = $this->artistRepository->findWithAllRelations();
-        return $this->json($artists);
+        $artistsEntities = $this->artistRepository->findWithAllRelations();
+        $data = [];
+        foreach ($artistsEntities as $artist) {
+            $builder = $this->dtoBuilder
+                ->fromEntity($artist)
+                ->withCoverImage()
+                ->withUploadedImages();
+            $data[] = $builder->build();
+        }
+        return $this->json($data);
     }
 }

@@ -6,8 +6,6 @@ use App\Entity\Publisher;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
-use Symfony\Component\Serializer\Serializer;
-use Symfony\Component\Serializer\SerializerInterface;
 use Vich\UploaderBundle\Templating\Helper\UploaderHelper;
 
 class PublisherDTOFactory

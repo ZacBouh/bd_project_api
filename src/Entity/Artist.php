@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Contract\Entity\HasUploadedImagesInterface;
 use App\Entity\Trait\HasUploadedImagesTrait;
+use App\Entity\Trait\TimestampableTrait;
 use App\Repository\ArtistRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -15,6 +16,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 class Artist implements HasUploadedImagesInterface
 {
     use HasUploadedImagesTrait;
+    use TimestampableTrait;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]

@@ -17,6 +17,9 @@ class ArtistRepository extends ServiceEntityRepository
     }
 
 
+    /**
+     * @return Artist[]
+     */
     public function findWithAllRelations(int $limit = 200): array
     {
         return $this->createQueryBuilder('a')

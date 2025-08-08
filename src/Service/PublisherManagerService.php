@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\DTO\Publisher\PublisherDTOBuilder;
 use App\DTO\Publisher\PublisherDTOFactory;
 use App\Repository\PublisherRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -18,6 +19,7 @@ class PublisherManagerService
         private LoggerInterface $logger,
         private UploadedImageService $imageService,
         private PublisherDTOFactory $dtoFactory,
+        private PublisherDTOBuilder $dtoBuilder,
     ) {}
 
     public function createPublisher(InputBag $newPublisherContent, ?FileBag $files): Publisher
@@ -45,7 +47,12 @@ class PublisherManagerService
         $data = [];
         $publishers = $this->publisherRepository->findWithAllRelations();
         foreach ($publishers as $publisher) {
-            $data[] = $this->dtoFactory->createFromEntity($publisher);
+            // $data[] = $this->dtoFactory->createFromEntity($publisher);
+            $builder = $this->dtoBuilder
+                ->fromEntity($publisher)
+                ->withTitlesIds()
+                ->withUploadedImages();
+            $data[] = $builder->build();
         }
         return $data;
     }
