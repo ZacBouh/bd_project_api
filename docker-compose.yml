@@ -1,0 +1,44 @@
+services:
+    bd-project-api:
+        container_name: bd_project_api
+        build:
+            context: .
+            dockerfile: Dockerfile
+        working_dir: /bd_project_api
+        volumes:
+            - bd_project_api:/bd_project_api
+        ports:
+            - 8001:8000
+        networks:
+            - bd_project_network
+        restart: unless-stopped
+        command: ["tail", "-f", "/dev/null"]
+    bd-project-database:
+        image: mariadb
+        restart: unless-stopped
+        container_name: bd_project_mariadb
+        environment:
+            - MARIADB_ROOT_PASSWORD=root
+        volumes:
+            - bd_project_database:/var/lib/mysql
+        networks:
+            - bd_project_network
+
+    bd-project-phpmyadmin:
+        image: phpmyadmin
+        restart: unless-stopped
+        container_name: bd_project_phpmyadmin
+        ports:
+            - 8080:80
+        environment:
+            - PMA_HOST=bd-project-database
+        networks:
+            - bd_project_network
+
+volumes:
+    bd_project_api:
+    bd_project_database:
+
+networks:
+    bd_project_network:
+        external: true
