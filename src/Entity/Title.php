@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Contract\Entity\HasUploadedImagesInterface;
 use App\Entity\Trait\HasUploadedImagesTrait;
 use App\Repository\TitleRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -12,7 +13,7 @@ use InvalidArgumentException;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: TitleRepository::class)]
-class Title
+class Title implements HasUploadedImagesInterface
 {
     use HasUploadedImagesTrait;
 

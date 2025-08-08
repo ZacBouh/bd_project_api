@@ -28,7 +28,7 @@ class ArtistSerializer implements NormalizerInterface
     public function normalize($object, ?string $format = null, array $context = []): array|string|int|float|bool|\ArrayObject|null
     {
         /** @var Artist $object */
-        $data = $this->normalizer->normalize($object, $format, ['groups' => 'artist:read']);
+        $data = $this->normalizer->normalize($object, $format, ['groups' => ['artist:read']]);
         $skillNames = [];
         foreach ($object->getSkills() as $skill) {
             $skillNames[] = $skill->getName();

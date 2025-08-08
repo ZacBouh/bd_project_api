@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\DTO\Publisher\PublisherDTOFactory;
 use App\Repository\PublisherRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -23,8 +24,7 @@ final class PublisherController extends AbstractController
     public function getPublishers(): JsonResponse
     {
         /** @var Array<int, Publisher> $publishers */
-        $publishers = $this->publisherRepository->findWithAllRelations();
-
+        $publishers = $this->publisherManagerService->getPublishers();
         return $this->json($publishers);
     }
 

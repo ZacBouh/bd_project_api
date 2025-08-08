@@ -2,9 +2,9 @@
 
 namespace App\Service;
 
+use App\DTO\Title\TitleDTOFactory;
 use App\Entity\ArtistTitleContribution;
 use App\Entity\Title;
-use App\Entity\UploadedImage;
 use App\Repository\ArtistRepository;
 use App\Repository\PublisherRepository;
 use App\Repository\SkillRepository;
@@ -12,10 +12,10 @@ use App\Repository\TitleRepository;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\FileBag;
 use Symfony\Component\HttpFoundation\InputBag;
 use Symfony\Component\Serializer\SerializerInterface;
+use App\DTO\Title\TitleReadDTO;
 
 class TitleManagerService
 {
@@ -28,6 +28,7 @@ class TitleManagerService
         private ArtistRepository $artistRepository,
         private SkillRepository $skillRepository,
         private UploadedImageService $imageService,
+        private TitleDTOFactory $dtoFactory,
     ) {}
 
     public function createTitle(InputBag $newTitleContent, ?FileBag $files = null)
@@ -54,7 +55,7 @@ class TitleManagerService
         }
 
         if (!is_null($files)) {
-            $this->imageService->saveUploadedCoverImage($newTitle, $files, "Cover")
+            $this->imageService->saveUploadedCoverImage($newTitle, $files, "Cover");
         }
 
         $this->entityManager->persist($newTitle);
@@ -62,10 +63,17 @@ class TitleManagerService
         return $newTitle;
     }
 
+    /**
+     * @return TitleReadDTO[]
+     */
     public function getTitles(): array
     {
+        $titles = [];
         /** @var Array<int, Title> $titles */
-        $titles = $this->titleRepository->findBy([], limit: 200);
+        $entities = $this->titleRepository->findWithAllRelations();
+        foreach ($entities as $title) {
+            $titles[] = $this->dtoFactory->createFromEntity($title);
+        }
         return $titles;
     }
 }

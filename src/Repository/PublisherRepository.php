@@ -20,8 +20,8 @@ class PublisherRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('p')
             ->leftJoin('p.titles', 't')->addSelect('t')
-            ->leftJoin('t.uploadedImages', 'timg')->addSelect('timg')
-            ->leftJoin('p.uploadedImages', 'pimg')->addSelect('pimg')
+            ->leftJoin('p.uploadedImages', 'uimg')->addSelect('uimg')
+            ->leftJoin('p.coverImage', 'cimg')->addSelect('cimg')
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();

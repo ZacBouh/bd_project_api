@@ -16,28 +16,16 @@ class TitleRepository extends ServiceEntityRepository
         parent::__construct($registry, Title::class);
     }
 
-//    /**
-//     * @return Title[] Returns an array of Title objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('t')
-//            ->andWhere('t.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('t.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
+    public function findWithAllRelations(): array
+    {
+        $qb = $this->createQueryBuilder('t')
+            ->leftJoin('t.publisher', 'p')->addSelect('p')
+            ->leftJoin('t.artistsContributions', 'c')->addSelect('c')
+            ->leftJoin('t.uploadedImages', 'ui')->addSelect('ui')
+            ->leftJoin('t.coverImage', 'ci')->addSelect('ci')
+            ->leftJoin('c.artist', 'a')->addSelect('a')
+            ->leftJoin('c.skill', 's')->addSelect('s');
 
-//    public function findOneBySomeField($value): ?Title
-//    {
-//        return $this->createQueryBuilder('t')
-//            ->andWhere('t.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
+        return $qb->getQuery()->getResult();
+    }
 }

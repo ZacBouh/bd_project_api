@@ -24,6 +24,8 @@ class ArtistRepository extends ServiceEntityRepository
             ->leftJoin('a.titlesContributions', 'tc')->addSelect('tc')
             ->leftJoin('tc.skill', 'skill')->addSelect('skill')
             ->leftJoin('tc.title', 'title')->addSelect('title')
+            ->leftJoin('a.uploadedImages', 'ui')->addSelect('ui')
+            ->leftJoin('a.coverImage', 'ci')->addSelect('ci')
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();

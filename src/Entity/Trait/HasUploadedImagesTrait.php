@@ -14,7 +14,7 @@ trait HasUploadedImagesTrait
     /**
      * @var Collection<int, UploadedImage>
      */
-    #[Groups(['title:read'])]
+    #[Groups(['title:read', 'artist:read'])]
     #[ORM\ManyToMany(targetEntity: UploadedImage::class)]
     private ?Collection $uploadedImages = null;
 

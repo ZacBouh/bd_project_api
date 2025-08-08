@@ -2,12 +2,11 @@
 
 namespace App\Service;
 
+use App\DTO\Publisher\PublisherDTOFactory;
 use App\Repository\PublisherRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use App\Entity\Publisher;
-use App\Entity\UploadedImage;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\FileBag;
 use Symfony\Component\HttpFoundation\InputBag;
 
@@ -18,6 +17,7 @@ class PublisherManagerService
         private PublisherRepository $publisherRepository,
         private LoggerInterface $logger,
         private UploadedImageService $imageService,
+        private PublisherDTOFactory $dtoFactory,
     ) {}
 
     public function createPublisher(InputBag $newPublisherContent, ?FileBag $files): Publisher
@@ -35,5 +35,18 @@ class PublisherManagerService
         $this->entityManager->persist($newPublisher);
         $this->entityManager->flush();
         return $newPublisher;
+    }
+
+    /**
+     * @return PublisherReadDTO[]
+     */
+    public function getPublishers(): array
+    {
+        $data = [];
+        $publishers = $this->publisherRepository->findWithAllRelations();
+        foreach ($publishers as $publisher) {
+            $data[] = $this->dtoFactory->createFromEntity($publisher);
+        }
+        return $data;
     }
 }
