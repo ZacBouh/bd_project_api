@@ -2,8 +2,10 @@
 
 namespace App\Service;
 
+use App\DTO\Copy\CopyDTOBuilder;
 use App\DTO\Copy\CopyReadDTO;
 use App\Entity\Copy;
+use App\Entity\Title;
 use App\Repository\CopyRepository;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -12,6 +14,8 @@ use Symfony\Component\HttpFoundation\InputBag;
 use APp\Entity\User;
 use App\Enum\CopyCondition;
 use App\Enum\PriceCurrency;
+use App\Repository\TitleRepository;
+use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
@@ -28,23 +32,30 @@ class CopyManagerService
         private EntityManagerInterface $entityManager,
         private DenormalizerInterface $denormalizer,
         private NormalizerInterface $normalizer,
+        private CopyDTOBuilder $dtoBuilder,
+        private UserRepository $userRepository,
+        private TitleRepository $titleRepository,
     ) {}
 
-    public function createCopy(InputBag $newCopyData, ?FileBag $files = null): ?Copy
+    public function createCopy(InputBag $newCopyData, ?FileBag $files = null): ?CopyReadDTO
     {
         /**
          * @var User $user
          */
         $user = $this->security->getUser();
         $userId = $user->getId();
-        $newCopyUserId =  (int) $newCopyData->get('ownerId');
-        if ($userId !== $newCopyUserId) {
-            $message = "User with id $userId cannot create a copy for user with id $newCopyUserId";
+        $newCopyOwnerId =  (int) $newCopyData->get('ownerId');
+        if ($userId !== $newCopyOwnerId) {
+            $message = "User with id $userId cannot create a copy for user with id $newCopyOwnerId";
             throw new AccessDeniedException($message);
         }
         $newCopy = new Copy();
-        $newCopy->setOwnerId($newCopyUserId)
-            ->setTitleId($newCopyData->get('titleId'))
+
+        $owner = $this->userRepository->findOneBy(['id' => $newCopyOwnerId]);
+        /** @var Title $title */
+        $title = $this->titleRepository->findOneBy(['id' =>  $newCopyData->get('titleId')]);
+        $newCopy->setOwner($owner)
+            ->setTitle($title)
             ->setPrice($newCopyData->get('price'))
             ->setCurrency(PriceCurrency::from($newCopyData->get('currency')))
             ->setBoughtForPrice($newCopyData->get('boughtForPrice'))
@@ -54,14 +65,21 @@ class CopyManagerService
         if (!CopyCondition::tryFrom($dataCopyConditionValue)) {
             throw new \InvalidArgumentException("Invalid copy condition : " . $dataCopyConditionValue);
         }
-        $newCopy->setCopyCondition(CopyCondition::from($dataCopyConditionValue)); {
+        $newCopy->setCopyCondition(CopyCondition::from($dataCopyConditionValue));
+        if (!is_null($files) && $files->count() > 0) {
             $this->imageService->saveUploadedCoverImage($newCopy, $files, "Copy Picture");
+        } else {
+            $newCopy->setCoverImage($title->getCoverImage());
         }
 
         $this->entityManager->persist($newCopy);
         $this->entityManager->flush();
 
-        return $newCopy;
+        $dto = $this->dtoBuilder->fromEntity($newCopy)
+            ->withUploadedImages()
+            ->build();
+
+        return $dto;
     }
 
     public function getCopies()
@@ -69,12 +87,13 @@ class CopyManagerService
         $copyDTOs = [];
         /** @var Copy[] */
         $copies = $this->copyRepository->findAllWithRelations();
-        dump($copies);
+        $this->logger->info("Retrieved " . count($copies) . " copies");
         foreach ($copies as $copy) {
-            // $this->logger->warning("COPY ID, OWNERID, TITLEID " . $copy->getId() . ' ' . $copy->getOwnerId() . ' ' . $copy->getTitleId());
-            // $data = $this->normalizer->normalize($copy);
-            // dump($data);
-            // $copyDTOs[] = $this->denormalizer->denormalize($data, CopyReadDTO::class, context: [AbstractNormalizer::ALLOW_EXTRA_ATTRIBUTES => true]);
+            $dto = $this->dtoBuilder->fromEntity($copy, ['copy:read'])
+                ->withUploadedImages()
+                ->build();
+            $copyDTOs[] = $dto;
+            $this->logger->warning("built dto " . json_encode($dto));
         }
 
         return $copyDTOs;

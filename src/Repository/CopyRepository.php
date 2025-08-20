@@ -25,25 +25,33 @@ class CopyRepository extends ServiceEntityRepository
 
     public function findAllWithRelations()
     {
-        $qb = $this->createQueryBuilder('c');
+        $qb = $this->createQueryBuilder('copy');
         /** @var User */
         $user = $this->security->getUser();
         if (!$this->security->isGranted(Role::ADMIN->value)) {
-            $qb->andWhere('c.ownerId = :ownerId')
-                ->setParameter('ownerId', $user->getId());
+            $qb->andWhere('copy.owner = :owner')
+                ->setParameter('owner', $user);
         }
         // Manually join table data on ids, giving the right names
-        $qb->leftJoin(User::class, 'owner', 'WITH', 'owner.id = c.ownerId')
+        $qb
+            ->leftJoin('copy.owner', 'owner')
             ->addSelect('owner')
-            ->leftJoin(Title::class, 't', 'WITH', 't.id = c.titleId')
-            ->addSelect('t');
+            ->leftJoin('copy.title', 'title')
+            ->addSelect('title')
+            ->leftJoin('title.publisher', 'publisher')
+            ->addSelect('publisher')
+            ->leftJoin('title.artistsContributions', 'contributions')
+            ->addSelect('contributions')
+            ->leftJoin('contributions.artist', 'artist')
+            ->addSelect('artist');
 
-        $qb->leftJoin('c.coverImage', 'coverImage')
+        $qb->leftJoin('copy.coverImage', 'coverImage')
             ->addSelect('coverImage')
-            ->leftJoin('c.uploadedImages', 'uploadedImage')
-            ->addSelect('coverImage');
+            ->leftJoin('copy.uploadedImages', 'uploadedImage')
+            ->addSelect('uploadedImage');
 
-        return $qb->getQuery()->getResult(Query::HYDRATE_SCALAR);
+        // return $qb->getQuery()->getResult(Query::HYDRATE_ARRAY);
+        return $qb->getQuery()->getResult();
     }
 
     //    /**

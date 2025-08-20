@@ -8,13 +8,17 @@ use App\Enum\PriceCurrency;
 class CopyReadDTO
 {
     public function __construct(
-        private int $id,
-        private int $ownerId,
-        private int $titleId,
-        private ?CopyCondition $copyCondition,
-        private ?float $price,
-        private ?PriceCurrency $currency,
-        private ?float $boughtForPrice,
-        private ?PriceCurrency $boughtForCurrency,
+        public int $id,
+        public ?array $owner,
+        public ?array $title,
+        public ?CopyCondition $copyCondition,
+        public ?float $price,
+        public ?PriceCurrency $currency,
+        public ?float $boughtForPrice,
+        public ?PriceCurrency $boughtForCurrency,
+        public ?array $coverImage,
+        public ?array $uploadedImages,
+        public ?\DateTime $createdAt,
+        public ?\DateTime $updatedAt,
     ) {}
 }

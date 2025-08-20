@@ -9,6 +9,9 @@ use App\Enum\CopyCondition;
 use App\Enum\PriceCurrency;
 use App\Repository\CopyRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\ORM\Mapping\JoinColumn;
+use Doctrine\ORM\Mapping\ManyToOne;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: CopyRepository::class)]
 #[ORM\HasLifecycleCallbacks]
@@ -20,26 +23,36 @@ class Copy implements HasUploadedImagesInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['copy:read'])]
     private ?int $id = null;
 
-    #[ORM\Column]
-    private ?int $ownerId = null;
+    #[Groups(['copy:read'])]
+    #[ManyToOne(targetEntity: User::class, fetch: 'LAZY')]
+    #[JoinColumn(name: 'owner_id', referencedColumnName: 'id')]
+    private ?User $owner = null;
 
-    #[ORM\Column]
-    private ?int $titleId = null;
+    #[Groups(['copy:read'])]
+    #[ManyToOne(targetEntity: Title::class, fetch: 'LAZY')]
+    #[JoinColumn(name: 'title_id', referencedColumnName: 'id')]
+    private ?Title $title = null;
 
+    #[Groups(['copy:read'])]
     #[ORM\Column(enumType: CopyCondition::class)]
     private ?CopyCondition $copyCondition = null;
 
+    #[Groups(['copy:read'])]
     #[ORM\Column(nullable: true)]
     private ?float $price = null;
 
+    #[Groups(['copy:read'])]
     #[ORM\Column(nullable: true, enumType: PriceCurrency::class)]
     private ?PriceCurrency $currency = null;
 
+    #[Groups(['copy:read'])]
     #[ORM\Column(nullable: true)]
     private ?float $boughtForPrice = null;
 
+    #[Groups(['copy:read'])]
     #[ORM\Column(nullable: true, enumType: PriceCurrency::class)]
     private ?PriceCurrency $boughtForCurrency = null;
 
@@ -48,26 +61,26 @@ class Copy implements HasUploadedImagesInterface
         return $this->id;
     }
 
-    public function getOwnerId(): ?int
+    public function getOwner(): ?User
     {
-        return $this->ownerId;
+        return $this->owner;
     }
 
-    public function setOwnerId(int $ownerId): static
+    public function setOwner(User $owner): static
     {
-        $this->ownerId = $ownerId;
+        $this->owner = $owner;
 
         return $this;
     }
 
-    public function getTitleId(): ?int
+    public function getTitle(): ?Title
     {
-        return $this->titleId;
+        return $this->title;
     }
 
-    public function setTitleId(int $titleId): static
+    public function setTitle(Title $title): static
     {
-        $this->titleId = $titleId;
+        $this->title = $title;
 
         return $this;
     }

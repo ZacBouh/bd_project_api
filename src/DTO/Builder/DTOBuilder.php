@@ -5,6 +5,8 @@ namespace App\DTO\Builder;
 
 use App\Contract\Entity\HasUploadedImagesInterface;
 use App\Mapper\ImageMapper;
+use Psr\Log\LoggerInterface;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 
@@ -21,6 +23,7 @@ class DTOBuilder
         private NormalizerInterface $normalizer,
         private DenormalizerInterface $denormalizer,
         private ImageMapper $imageMapper,
+        private LoggerInterface $logger,
     ) {}
 
     /**
@@ -29,11 +32,16 @@ class DTOBuilder
     public function fromEntity(object $entity, array|string $groups = []): self
     {
 
-        $this->entity = $entity;
-        $this->data = $this->normalizer->normalize($entity, null, [
-            'groups' => (array) $groups
-        ]);
+        $context = [
+            'groups' => (array) $groups,
+            AbstractNormalizer::CIRCULAR_REFERENCE_HANDLER => static function ($object) {
+                return method_exists($object, 'getId') ? $object->getId() : null;
+            },
+            AbstractNormalizer::CIRCULAR_REFERENCE_LIMIT => 1
+        ];
 
+        $this->entity = $entity;
+        $this->data = $this->normalizer->normalize($entity, null, $context);
         return $this;
     }
 
@@ -58,6 +66,7 @@ class DTOBuilder
      */
     public function build(string $dtoClass): object
     {
+        $this->logger->warning("Build data " . json_encode($this->data));
         return $this->denormalizer->denormalize($this->data, $dtoClass);
     }
 
