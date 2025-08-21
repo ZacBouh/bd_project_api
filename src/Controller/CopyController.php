@@ -2,11 +2,13 @@
 
 namespace App\Controller;
 
+use App\DTO\Copy\CopyReadDTO;
 use App\Service\CopyManagerService;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
 
 final class CopyController extends AbstractController
@@ -35,5 +37,17 @@ final class CopyController extends AbstractController
         $data = $this->copyService->getCopies();
 
         return $this->json($data);
+    }
+
+    #[Route('/api/copy', name: 'copy_remove', methods: 'DELETE')]
+    public function removeCopy(
+        #[MapRequestPayload] CopyReadDTO $copyDTO
+    ): JsonResponse {
+        try {
+            $this->copyService->removeCopy($copyDTO);
+            return $this->json(['message' => 'Copy successfully removed, id : ' . $copyDTO->id]);
+        } catch (\Exception $e) {
+            return $this->json(['message' => 'error' . $e->getMessage(), $e->getCode() ?? 500]);
+        }
     }
 }

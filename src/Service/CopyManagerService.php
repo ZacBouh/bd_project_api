@@ -16,7 +16,9 @@ use App\Enum\CopyCondition;
 use App\Enum\PriceCurrency;
 use App\Repository\TitleRepository;
 use App\Repository\UserRepository;
+use App\Security\Role;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Routing\Exception\ResourceNotFoundException;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
@@ -95,7 +97,23 @@ class CopyManagerService
             $copyDTOs[] = $dto;
             $this->logger->warning("built dto " . json_encode($dto));
         }
-
         return $copyDTOs;
+    }
+
+    public function removeCopy(CopyReadDTO $copyDTO)
+    {
+        /** @var User $user */
+        $user = $this->security->getUser();
+        /** @var Copy $copy */
+        $copy = $this->copyRepository->findOneBy(['id' => $copyDTO->id]);
+        if ($copy->getOwner() !== $user && !$user->$this->isGranted(Role::ADMIN->value)) {
+            throw new AccessDeniedException('Connected user does not have the right to remove a copy from another user library');
+        }
+        if (!is_null($copy)) {
+            $this->entityManager->remove($copy);
+            $this->entityManager->flush();
+            return;
+        }
+        throw new ResourceNotFoundException('No copy was found with id ' . $copyDTO->id);
     }
 }
