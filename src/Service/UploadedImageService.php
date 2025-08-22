@@ -27,11 +27,17 @@ class UploadedImageService
         if (!$file instanceof UploadedFile) {
             throw new \InvalidArgumentException("File argument passed to saveUploadedCoverImage is not a FileBag");
         }
-        $coverImage = new UploadedImage();
-        $coverImage->setFile($file);
-        $coverImage->setImageName($imageName);
-        $this->entityManager->persist($coverImage);
-        $this->entityManager->flush();
+        $coverImage = $this->saveUploadedImage($file, $imageName);
         $entity->setCoverImage($coverImage);
+    }
+
+    public function saveUploadedImage(UploadedFile $file, $imageName = "unnamed"): UploadedImage
+    {
+        $image =  (new UploadedImage())
+            ->setFile($file)
+            ->setImageName($imageName);
+        $this->entityManager->persist($image);
+        $this->entityManager->flush();
+        return $image;
     }
 }

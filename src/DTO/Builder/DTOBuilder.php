@@ -5,7 +5,10 @@ namespace App\DTO\Builder;
 
 use App\Contract\Entity\HasUploadedImagesInterface;
 use App\Mapper\ImageMapper;
+use App\Service\UploadedImageService;
+use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
@@ -24,6 +27,7 @@ class DTOBuilder
         private DenormalizerInterface $denormalizer,
         private ImageMapper $imageMapper,
         private LoggerInterface $logger,
+        private UploadedImageService $imageService,
     ) {}
 
     /**
@@ -45,16 +49,22 @@ class DTOBuilder
         return $this;
     }
 
-    public function addField(string $name, mixed $value): self
+    public function fromArray(array $array): self
     {
-        $this->data[$name] = $value;
+        $this->data = $array;
+        return $this;
+    }
+
+    public function addField(string $key, mixed $value): self
+    {
+        $this->data[$key] = $value;
         return $this;
     }
 
     public function addFields(array $fields): self
     {
-        foreach ($fields as $name => $value) {
-            $this->data[$name] = $value;
+        foreach ($fields as $key => $value) {
+            $this->data[$key] = $value;
         }
         return $this;
     }
@@ -70,13 +80,24 @@ class DTOBuilder
         return $this->denormalizer->denormalize($this->data, $dtoClass);
     }
 
-    public function addCoverImage(?string $propertyName = 'coverImage'): self
+    public function addCoverImage(?string $propertyName = 'coverImage', ?UploadedFile $imageFile = null): self
     {
         $entity = $this->entity;
+        if (is_null($entity) && is_null($imageFile)) {
+            throw new InvalidArgumentException('No entity nor $image argument provided : addCoverImage require that either the DTO is build from an entity or that an UploadedFile $image argument is provided');
+        }
+        if ($imageFile instanceof UploadedFile) {
+            $coverImage = $this->imageService->saveUploadedImage($imageFile, "Cover Image");
+            $coverImageWithUrl = $this->imageMapper->mapWithUrl($coverImage);
+            $this->addField($propertyName, $coverImageWithUrl);
+            return $this;
+        }
+
         if ($entity instanceof HasUploadedImagesInterface) {
             $coverImage = $this->imageMapper->mapWithUrl($entity->getCoverImage());
             $this->addField($propertyName, $coverImage);
         }
+
 
         return $this;
     }

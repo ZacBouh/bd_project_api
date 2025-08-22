@@ -106,14 +106,19 @@ class CopyManagerService
         $user = $this->security->getUser();
         /** @var Copy $copy */
         $copy = $this->copyRepository->findOneBy(['id' => $copyDTO->id]);
+        if (is_null($copy)) {
+            throw new ResourceNotFoundException('No copy was found with id ' . $copyDTO->id);
+        }
         if ($copy->getOwner() !== $user && !$user->$this->isGranted(Role::ADMIN->value)) {
             throw new AccessDeniedException('Connected user does not have the right to remove a copy from another user library');
         }
-        if (!is_null($copy)) {
-            $this->entityManager->remove($copy);
-            $this->entityManager->flush();
-            return;
-        }
-        throw new ResourceNotFoundException('No copy was found with id ' . $copyDTO->id);
+        $this->entityManager->remove($copy);
+        $this->entityManager->flush();
+        return;
+    }
+
+    public function updateCopy(CopyReadDTO $copyDTO)
+    {
+        $this->logger->warning("Copy to update DTO: " . json_encode($copyDTO));
     }
 }

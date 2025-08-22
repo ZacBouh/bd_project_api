@@ -50,4 +50,6 @@ final class CopyController extends AbstractController
             return $this->json(['message' => 'error' . $e->getMessage(), $e->getCode() ?? 500]);
         }
     }
+
+    public function updateCopy(): JsonResponse {}
 }
