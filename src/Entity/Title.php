@@ -3,7 +3,9 @@
 namespace App\Entity;
 
 use App\Contract\Entity\HasUploadedImagesInterface;
+use App\Entity\Trait\HasLanguageTrait;
 use App\Entity\Trait\HasUploadedImagesTrait;
+use App\Enum\Language;
 use App\Repository\TitleRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -16,6 +18,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 class Title implements HasUploadedImagesInterface
 {
     use HasUploadedImagesTrait;
+    use HasLanguageTrait;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -38,10 +41,10 @@ class Title implements HasUploadedImagesInterface
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $description = null;
 
-    #[Groups(['title:read'])]
-    #  ISO 639-1 (2-letter codes like en, fr, es)
-    #[ORM\Column(length: 2, nullable: true)]
-    private ?string $language = null;
+    // #[Groups(['title:read'])]
+    // #  ISO 639-1 (2-letter codes like en, fr, es)
+    // #[ORM\Column(length: 2, nullable: true, enumType: Language::class)]
+    // private ?Language $language = null;
 
     /**
      * @var Collection<int, ArtistTitleContribution>
@@ -59,10 +62,10 @@ class Title implements HasUploadedImagesInterface
         return $this->id;
     }
 
-    public function getLanguage(): ?string
-    {
-        return $this->language;
-    }
+    // public function getLanguage(): ?Language
+    // {
+    //     return $this->language;
+    // }
 
     public function getReleaseDate(): ?\DateTime
     {
@@ -86,12 +89,20 @@ class Title implements HasUploadedImagesInterface
         return $this;
     }
 
-    public function setLanguage(string $language): static
-    {
-        $this->language = $language;
+    // public function setLanguage(null | string | Language $language): static
+    // {
+    //     if ($language === '') {
+    //         $language = null;
+    //     }
 
-        return $this;
-    }
+    //     if (is_string($language)) {
+    //         $language = Language::from($language);
+    //     }
+
+    //     $this->language = $language;
+
+    //     return $this;
+    // }
 
 
     public function getPublisher(): ?Publisher
