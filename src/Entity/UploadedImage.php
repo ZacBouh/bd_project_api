@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\UploadedImageRepository;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\Serializer\Attribute\Groups;
@@ -17,11 +18,10 @@ class UploadedImage
     #[ORM\GeneratedValue]
     #[ORM\Column]
     #[Groups(['titleReadDTO', 'artist:read', 'uploadedImage:read'])]
-
     private ?int $id = null;
 
     #[Ignore] // This exclude the property from any serialization
-    #[Vich\UploadableField(mapping: 'uploaded_image', fileNameProperty: 'fileName', size: 'fileSize', originalName: 'originalFileName')]
+    #[Vich\UploadableField(mapping: 'uploaded_image', fileNameProperty: 'fileName', size: 'fileSize', originalName: 'originalFileName', mimeType: 'fileMimeType', dimensions: 'imageDimensions')]
     private ?File $file = null;
 
     #[Groups(['titleReadDTO', 'uploadedImage:read'])]
@@ -49,8 +49,8 @@ class UploadedImage
     private ?string $fileMimeType = null;
 
     #[Groups(['titleReadDTO', 'uploadedImage:read'])]
-    #[ORM\Column(length: 20, nullable: true)]
-    private ?string $imageDimensions = null;
+    #[ORM\Column(length: 20, nullable: true, type: Types::JSON)]
+    private ?array $imageDimensions = null;
 
 
     public function getId(): ?int
@@ -78,11 +78,11 @@ class UploadedImage
         return $this;
     }
 
-    public function getImageDimensions()
+    public function getImageDimensions(): ?array
     {
         return $this->imageDimensions;
     }
-    public function setImageDimensions(string $imageDimensions): static
+    public function setImageDimensions(array $imageDimensions): static
     {
         $this->imageDimensions = $imageDimensions;
         return $this;

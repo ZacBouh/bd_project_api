@@ -14,13 +14,13 @@ use Symfony\Component\HttpFoundation\InputBag;
 use APp\Entity\User;
 use App\Enum\CopyCondition;
 use App\Enum\PriceCurrency;
+use App\Mapper\CopyMapper;
 use App\Repository\TitleRepository;
 use App\Repository\UserRepository;
 use App\Security\Role;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Routing\Exception\ResourceNotFoundException;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
-use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
@@ -37,6 +37,7 @@ class CopyManagerService
         private CopyDTOBuilder $dtoBuilder,
         private UserRepository $userRepository,
         private TitleRepository $titleRepository,
+        private CopyMapper $copyMapper,
     ) {}
 
     public function createCopy(InputBag $newCopyData, ?FileBag $files = null): ?CopyReadDTO
@@ -95,7 +96,7 @@ class CopyManagerService
                 ->withUploadedImages()
                 ->build();
             $copyDTOs[] = $dto;
-            $this->logger->warning("built dto " . json_encode($dto));
+            // $this->logger->warning("built dto " . json_encode($dto));
         }
         return $copyDTOs;
     }
@@ -120,5 +121,17 @@ class CopyManagerService
     public function updateCopy(CopyReadDTO $copyDTO)
     {
         $this->logger->warning("Copy to update DTO: " . json_encode($copyDTO));
+
+        /** @var Copy $copy */
+        $copy = $this->copyRepository->findOneBy(['id' => $copyDTO->id]);
+        if (is_null($copy)) {
+            throw new ResourceNotFoundException("Update Copy : no copy found for id " . $copyDTO->id);
+        }
+
+        $this->copyMapper->fromDTO($copyDTO, $copy);
+        $this->entityManager->persist($copy);
+        $this->entityManager->flush();
+
+        return $copyDTO;
     }
 }

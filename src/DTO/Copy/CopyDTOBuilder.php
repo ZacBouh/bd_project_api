@@ -6,6 +6,7 @@ use App\DTO\Builder\DTOBuilder;
 use App\DTO\Builder\EntityDTOBuilderInterface;
 use App\Entity\Copy;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 class CopyDTOBuilder implements EntityDTOBuilderInterface
 {
@@ -41,9 +42,21 @@ class CopyDTOBuilder implements EntityDTOBuilderInterface
         return $this;
     }
 
+    public function fromArray(array $array): static
+    {
+        $this->builder->fromArray($array);
+        return $this;
+    }
+
     public function withUploadedImages(): static
     {
         $this->builder->addUploadedImages();
+        return $this;
+    }
+
+    public function addCoverImage(?string $propertyName = 'coverImage', ?UploadedFile $imageFile = null): static
+    {
+        $this->builder->addCoverImage($propertyName, $imageFile);
         return $this;
     }
 

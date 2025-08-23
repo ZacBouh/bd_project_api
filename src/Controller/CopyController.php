@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\DTO\Copy\CopyDTOBuilder;
 use App\DTO\Copy\CopyReadDTO;
 use App\Service\CopyManagerService;
 use Psr\Log\LoggerInterface;
@@ -16,6 +17,7 @@ final class CopyController extends AbstractController
     public function __construct(
         private LoggerInterface $logger,
         private CopyManagerService $copyService,
+        private CopyDTOBuilder $copyDTOBuilder,
     ) {}
 
     #[Route('/api/copy', name: 'copy_create', methods: 'POST')]
@@ -51,5 +53,18 @@ final class CopyController extends AbstractController
         }
     }
 
-    public function updateCopy(): JsonResponse {}
+    #[Route('/api/copy/update', name: 'copy_update', methods: 'POST')]
+    public function updateCopy(
+        Request $request
+    ): JsonResponse {
+        $data = $request->request->all();
+        $copyDTOBuilder = $this->copyDTOBuilder->fromArray($data);
+        $coverImageFile = $request->files->get('coverImageFile');
+        if (!is_null($coverImageFile)) {
+            $copyDTOBuilder->addCoverImage(imageFile: $coverImageFile);
+        }
+        $copyDTO = $copyDTOBuilder->build();
+        $result = $this->copyService->updateCopy($copyDTO);
+        return $this->json($result);
+    }
 }
