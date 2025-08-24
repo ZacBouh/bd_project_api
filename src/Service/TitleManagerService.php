@@ -41,6 +41,8 @@ class TitleManagerService
         $publisher = $this->publisherRepository->findOneBy(['id' => $newTitleContent->get('publisher')]);
         $newTitle->setPublisher($publisher);
 
+        $this->entityManager->persist($newTitle);
+
         foreach ($newTitleContent->all('artistsContributions') as $contributionData) {
             $artist = $this->artistRepository->findOneBy(['id' => $contributionData['artist']]);
             $skills = $this->skillRepository->findBy(['name' => $contributionData['skills']]);
@@ -58,7 +60,6 @@ class TitleManagerService
             $this->imageService->saveUploadedCoverImage($newTitle, $files, "Cover");
         }
 
-        $this->entityManager->persist($newTitle);
         $this->entityManager->flush();
         return $newTitle;
     }

@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\DTO\Title\TitleDTOFactory;
 use App\Entity\Title;
 use App\Service\TitleManagerService;
 use Psr\Log\LoggerInterface;
@@ -15,7 +16,8 @@ final class TitleController extends AbstractController
 {
     public function __construct(
         private TitleManagerService $titleManagerService,
-        private LoggerInterface $logger
+        private LoggerInterface $logger,
+        private TitleDTOFactory $titleDTOFactory
     ) {}
 
     #[Route('/api/titles', name: 'title_create', methods: 'POST')]
@@ -25,7 +27,9 @@ final class TitleController extends AbstractController
         $this->logger->warning("Received Create Title Request");
         $newTitle = $this->titleManagerService->createTitle($request->request, $request->files);
 
-        return $this->json($newTitle);
+        $response = $this->titleDTOFactory->createFromEntity($newTitle);
+
+        return $this->json($response);
     }
 
     #[Route('/api/titles', name: 'title_get')]
