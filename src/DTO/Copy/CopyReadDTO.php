@@ -4,7 +4,6 @@ namespace App\DTO\Copy;
 
 use App\Enum\CopyCondition;
 use App\Enum\PriceCurrency;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 class CopyReadDTO
 {

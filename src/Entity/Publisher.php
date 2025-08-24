@@ -58,9 +58,16 @@ class Publisher implements HasUploadedImagesInterface
     #[ORM\OneToMany(targetEntity: Title::class, mappedBy: 'publisher')]
     private Collection $titles;
 
+    /**
+     * @var Collection<int, Series>
+     */
+    #[ORM\OneToMany(targetEntity: Series::class, mappedBy: 'publisher')]
+    private Collection $series;
+
     public function __construct()
     {
         $this->titles = new ArrayCollection();
+        $this->series = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -190,6 +197,36 @@ class Publisher implements HasUploadedImagesInterface
             // set the owning side to null (unless already changed)
             if ($title->getPublisher() === $this) {
                 $title->setPublisher(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Series>
+     */
+    public function getSeries(): Collection
+    {
+        return $this->series;
+    }
+
+    public function addSeries(Series $series): static
+    {
+        if (!$this->series->contains($series)) {
+            $this->series->add($series);
+            $series->setPublisher($this);
+        }
+
+        return $this;
+    }
+
+    public function removeSeries(Series $series): static
+    {
+        if ($this->series->removeElement($series)) {
+            // set the owning side to null (unless already changed)
+            if ($series->getPublisher() === $this) {
+                $series->setPublisher(null);
             }
         }
 

@@ -52,6 +52,9 @@ class Title implements HasUploadedImagesInterface
     #[ORM\OneToMany(targetEntity: ArtistTitleContribution::class, mappedBy: 'title', orphanRemoval: true, cascade: ['remove'])]
     private Collection $artistsContributions;
 
+    #[ORM\ManyToOne(inversedBy: 'titles')]
+    private ?Series $series = null;
+
     public function __construct()
     {
         $this->artistsContributions = new ArrayCollection();
@@ -155,6 +158,18 @@ class Title implements HasUploadedImagesInterface
                 $artistsContribution->setTitle(null);
             }
         }
+        return $this;
+    }
+
+    public function getSeries(): ?Series
+    {
+        return $this->series;
+    }
+
+    public function setSeries(?Series $series): static
+    {
+        $this->series = $series;
+
         return $this;
     }
 }
