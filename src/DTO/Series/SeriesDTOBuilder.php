@@ -2,14 +2,18 @@
 
 namespace App\DTO\Series;
 
+use App\DTO\Publisher\PublisherDTOBuilder;
+use App\Entity\Series;
 use Symfony\Component\HttpFoundation\FileBag;
 use Symfony\Component\HttpFoundation\InputBag;
 use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use App\Enum\Language;
 use App\Enum\OnGoingStatus;
+use Normalizer;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 class SeriesDTOBuilder
 {
@@ -17,8 +21,10 @@ class SeriesDTOBuilder
     private array $denomalizationCallbacks;
 
     public function __construct(
+        private NormalizerInterface $normalizer,
         private DenormalizerInterface $denormalizer,
         private LoggerInterface $logger,
+        private PublisherDTOBuilder $publisherDTOBuilder,
     ) {
         $this->denomalizationCallbacks = [
             'language' => fn($value) => $value instanceof Language ? $value : Language::from($value),
@@ -37,6 +43,23 @@ class SeriesDTOBuilder
         return $this;
     }
 
+    public function readDTOFromEntity(Series $series): static
+    {
+        $this->data = $this->normalizer->normalize($series, 'array', [
+            AbstractObjectNormalizer::IGNORED_ATTRIBUTES => [
+                'publisher',
+                'titles'
+            ],
+
+        ]);
+
+        $this->data['publisher'] = [
+            'id' => $series->getPublisher()->getId(),
+            'name' => $series->getPublisher()->getName()
+        ];
+        return $this;
+    }
+
     public function buildWriteDTO(): SeriesWriteDTO
     {
         /** @var SeriesWriteDTO $dto */
@@ -48,6 +71,14 @@ class SeriesDTOBuilder
         if ($this->data['coverImageFile']) {
             $dto->coverImageFile = $this->data['coverImageFile'];
         }
+        return $dto;
+    }
+
+    public function buildReadDTO(): SeriesReadDTO
+    {
+        $this->logger->critical('Content of the data to build dto ' . json_encode($this->data));
+        $dto = $this->denormalizer->denormalize($this->data, SeriesReadDTO::class, 'array', []);
+
         return $dto;
     }
 }

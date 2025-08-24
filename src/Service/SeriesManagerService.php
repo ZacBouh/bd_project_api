@@ -4,12 +4,14 @@ namespace App\Service;
 
 use App\DTO\Series\SeriesDTOBuilder;
 use App\DTO\Series\SeriesWriteDTO;
+use App\Entity\Series;
 use App\Mapper\SeriesMapper;
 use App\Repository\SeriesRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Validator\Exception\ValidationFailedException;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+
 
 class SeriesManagerService
 {
@@ -23,7 +25,7 @@ class SeriesManagerService
         private SeriesMapper $seriesMapper,
     ) {}
 
-    public function createSeries(SeriesWriteDTO $seriesDTO)
+    public function createSeries(SeriesWriteDTO $seriesDTO): Series
     {
         $violations = $this->validator->validate($seriesDTO);
         if (count($violations) > 0) {
@@ -40,5 +42,6 @@ class SeriesManagerService
         $this->entityManager->flush();
 
         $this->logger->critical('validated dto');
+        return $series;
     }
 }

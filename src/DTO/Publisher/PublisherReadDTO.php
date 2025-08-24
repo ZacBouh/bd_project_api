@@ -9,7 +9,7 @@ class PublisherReadDTO
         public string $name,
         public ?string $description,
         public ?array $coverImage,
-        public array $uploadedImages,
+        public ?array $uploadedImages,
         public ?array $titles,
         public ?\DateTime $birthDate,
         public ?\DateTime $deathDate,

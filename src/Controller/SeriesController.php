@@ -25,7 +25,9 @@ final class SeriesController extends AbstractController
         $this->logger->alert("Received Series Create " . json_encode($request->request->all()) . json_encode($request->files->all()));
         $writeDTO = $this->seriesDTOBuilder->writeDTOFromInputBags($request->request, $request->files)
             ->buildWriteDTO();
-        $this->seriesService->createSeries($writeDTO);
-        return $this->json($writeDTO);
+        $series = $this->seriesService->createSeries($writeDTO);
+        $this->logger->critical('Series : ' . $series->getId() . $series->getName());
+        $readDTO = $this->seriesDTOBuilder->readDTOFromEntity($series)->buildReadDTO();
+        return $this->json($readDTO);
     }
 }
