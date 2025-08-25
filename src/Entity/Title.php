@@ -55,6 +55,9 @@ class Title implements HasUploadedImagesInterface
     #[ORM\ManyToOne(inversedBy: 'titles')]
     private ?Series $series = null;
 
+    #[ORM\ManyToOne(inversedBy: 'titles')]
+    private ?PublisherCollection $collection = null;
+
     public function __construct()
     {
         $this->artistsContributions = new ArrayCollection();
@@ -169,6 +172,18 @@ class Title implements HasUploadedImagesInterface
     public function setSeries(?Series $series): static
     {
         $this->series = $series;
+
+        return $this;
+    }
+
+    public function getCollection(): ?PublisherCollection
+    {
+        return $this->collection;
+    }
+
+    public function setCollection(?PublisherCollection $collection): static
+    {
+        $this->collection = $collection;
 
         return $this;
     }

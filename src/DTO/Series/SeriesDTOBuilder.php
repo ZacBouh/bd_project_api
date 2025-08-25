@@ -18,7 +18,7 @@ use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 class SeriesDTOBuilder
 {
     private array $data = [];
-    private array $denomalizationCallbacks;
+    private array $denormalizationCallbacks;
 
     public function __construct(
         private NormalizerInterface $normalizer,
@@ -26,7 +26,7 @@ class SeriesDTOBuilder
         private LoggerInterface $logger,
         private PublisherDTOBuilder $publisherDTOBuilder,
     ) {
-        $this->denomalizationCallbacks = [
+        $this->denormalizationCallbacks = [
             'language' => fn($value) => $value instanceof Language ? $value : Language::from($value),
             'onGoingStatus' => fn($value) => $value instanceof OnGoingStatus ? $value : OnGoingStatus::tryFrom($value),
         ];
@@ -65,7 +65,7 @@ class SeriesDTOBuilder
         /** @var SeriesWriteDTO $dto */
         $dto = $this->denormalizer->denormalize($this->data, SeriesWriteDTO::class, null, [
             AbstractObjectNormalizer::DISABLE_TYPE_ENFORCEMENT => true,
-            AbstractObjectNormalizer::CALLBACKS => $this->denomalizationCallbacks,
+            AbstractObjectNormalizer::CALLBACKS => $this->denormalizationCallbacks,
             AbstractObjectNormalizer::IGNORED_ATTRIBUTES => ['coverImageFile'],
         ]);
         if ($this->data['coverImageFile']) {

@@ -39,7 +39,11 @@ class TitleDTOFactory
         ];
 
         $coverImage = $this->serializer->normalize($title->getCoverImage(), null, ['groups' => ['titleReadDTO']]);
-        $coverImage['url'] = $this->uploaderHelper->asset($title->getCoverImage(), 'file');
+        if (!is_null($coverImage)) {
+            $coverImage['url'] = $this->uploaderHelper->asset($title->getCoverImage(), 'file');
+        } else {
+            $coverImage = [];
+        }
 
         $uploadedImages = [];
         foreach ($title->getUploadedImages() as $image) {

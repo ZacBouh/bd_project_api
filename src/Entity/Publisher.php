@@ -64,10 +64,17 @@ class Publisher implements HasUploadedImagesInterface
     #[ORM\OneToMany(targetEntity: Series::class, mappedBy: 'publisher')]
     private Collection $series;
 
+    /**
+     * @var Collection<int, Publisher>
+     */
+    #[ORM\OneToMany(targetEntity: Publisher::class, mappedBy: 'publisher')]
+    private ?Collection $collections = null;
+
     public function __construct()
     {
         $this->titles = new ArrayCollection();
         $this->series = new ArrayCollection();
+        $this->collections = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -229,6 +236,18 @@ class Publisher implements HasUploadedImagesInterface
                 $series->setPublisher(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getCollections(): ?PublisherCollection
+    {
+        return $this->collections;
+    }
+
+    public function setCollections(?PublisherCollection $collections): static
+    {
+        $this->collections = $collections;
 
         return $this;
     }
