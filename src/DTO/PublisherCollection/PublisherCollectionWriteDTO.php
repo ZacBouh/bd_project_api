@@ -16,10 +16,16 @@ class PublisherCollectionWriteDTO
         #[Assert\Positive(message: 'Publisher id must be a positive integer')]
         public int $publisherId,
 
+        #[Assert\Positive(message: 'PublisherCollection id must be a positive integer')]
+        public ?int $id,
+
+        #[Assert\NotBlank(message: 'PublisherCollection name cannot be blank')]
+        public string $language,
+
         #[Assert\All(constraints: [
             new Assert\Type('integer'),
             new Assert\Positive()
-        ], message: 'Title ids must be positive integers')]
+        ])]
         public ?array $titleIds,
 
         public ?string $description,
@@ -35,6 +41,7 @@ class PublisherCollectionWriteDTO
             new Assert\DateTime()
         ])]
         public ?string $deathDate,
+
 
         #[Assert\Image(
             maxSize: '10M',

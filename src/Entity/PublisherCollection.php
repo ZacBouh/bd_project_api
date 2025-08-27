@@ -11,7 +11,9 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\ORM\Mapping\HasLifecycleCallbacks;
 
+#[HasLifecycleCallbacks]
 #[ORM\Entity(repositoryClass: PublisherCollectionRepository::class)]
 class PublisherCollection
 {
@@ -69,33 +71,14 @@ class PublisherCollection
         return $this;
     }
 
-    /**
-     * @return Collection<int, Publisher>
-     */
-    public function getPublisher(): Collection
+
+    public function getPublisher(): Publisher
     {
         return $this->publisher;
     }
-
-    public function addPublisher(Publisher $publisher): static
+    public function setPublisher(Publisher $publisher): static
     {
-        if (!$this->publisher->contains($publisher)) {
-            $this->publisher->add($publisher);
-            $publisher->setCollections($this);
-        }
-
-        return $this;
-    }
-
-    public function removePublisher(Publisher $publisher): static
-    {
-        if ($this->publisher->removeElement($publisher)) {
-            // set the owning side to null (unless already changed)
-            if ($publisher->getCollections() === $this) {
-                $publisher->setCollections(null);
-            }
-        }
-
+        $this->publisher = $publisher;
         return $this;
     }
 

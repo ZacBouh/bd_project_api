@@ -30,4 +30,12 @@ final class SeriesController extends AbstractController
         $readDTO = $this->seriesDTOBuilder->readDTOFromEntity($series)->buildReadDTO();
         return $this->json($readDTO);
     }
+
+    #[Route('/api/series', name: 'series_get_all', methods: Request::METHOD_GET)]
+    public function getSeries(): JsonResponse
+    {
+        $dtos = $this->seriesService->getSeries();
+        $this->logger->alert(sprintf('Returning %s SeriesReadDTO', count($dtos)));
+        return $this->json($dtos, 200);
+    }
 }

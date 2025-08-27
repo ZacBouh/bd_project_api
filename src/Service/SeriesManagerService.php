@@ -4,6 +4,7 @@ namespace App\Service;
 
 use App\DTO\Series\SeriesDTOBuilder;
 use App\DTO\Series\SeriesWriteDTO;
+use App\DTO\Series\SeriesReadDTO;
 use App\Entity\Series;
 use App\Mapper\SeriesMapper;
 use App\Repository\SeriesRepository;
@@ -43,5 +44,15 @@ class SeriesManagerService
 
         $this->logger->critical('validated dto');
         return $series;
+    }
+
+    /**
+     * @return SeriesReadDTO[]
+     */
+    public function getSeries(): array
+    {
+        $seriesArray = $this->seriesRepo->findAllWithPublisherAndImages();
+        $dtos = array_map(fn($series) => $this->dtoBuilder->readDTOFromEntity($series)->buildReadDTO(), $seriesArray);
+        return $dtos;
     }
 }

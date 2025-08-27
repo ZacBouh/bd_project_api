@@ -239,13 +239,18 @@ class Publisher implements HasUploadedImagesInterface
 
         return $this;
     }
-
-    public function getCollections(): ?PublisherCollection
+    /**
+     * @return Collection<int, PublisherCollection>
+     */
+    public function getCollections(): ?Collection
     {
         return $this->collections;
     }
 
-    public function setCollections(?PublisherCollection $collections): static
+    /**
+     * @param Collection<PublisherCollection>|null
+     */
+    public function setCollections(?Collection $collections): static
     {
         $this->collections = $collections;
 

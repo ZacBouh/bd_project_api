@@ -8,7 +8,6 @@ use App\Entity\Series;
 use App\Entity\Title;
 use App\Entity\UploadedImage;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\EntityNotFoundException;
 use InvalidArgumentException;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
