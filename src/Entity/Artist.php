@@ -46,6 +46,9 @@ class Artist implements HasUploadedImagesInterface
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     private ?\DateTime $deathDate = null;
 
+    /**
+     * @var Collection<int, Skill>
+     */
     #[Groups(['artist:read'])]
     #[ORM\ManyToMany(targetEntity: Skill::class)]
     #[ORM\JoinTable(name: "artist_skills")]
@@ -175,13 +178,7 @@ class Artist implements HasUploadedImagesInterface
 
     public function removeTitlesContribution(ArtistTitleContribution $titlesContribution): static
     {
-        if ($this->titlesContributions->removeElement($titlesContribution)) {
-            // set the owning side to null (unless already changed)
-            if ($titlesContribution->getArtist() === $this) {
-                $titlesContribution->setArtist(null);
-            }
-        }
-
+        $this->titlesContributions->removeElement($titlesContribution);
         return $this;
     }
 

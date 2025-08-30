@@ -38,7 +38,7 @@ class Copy implements HasUploadedImagesInterface
 
     #[Groups(['copy:read'])]
     #[ORM\Column(enumType: CopyCondition::class)]
-    private ?CopyCondition $copyCondition = null;
+    private CopyCondition $copyCondition;
 
     #[Groups(['copy:read'])]
     #[ORM\Column(nullable: true)]

@@ -16,15 +16,15 @@ class ArtistTitleContribution
 
     #[ORM\ManyToOne(inversedBy: 'titlesContributions')]
     #[ORM\JoinColumn(nullable: false)]
-    private ?Artist $artist = null;
+    private Artist $artist;
 
     #[ORM\ManyToOne(inversedBy: 'artistsContributions')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
-    private ?Title $title = null;
+    private Title $title;
 
     #[ORM\ManyToOne(targetEntity: Skill::class)]
     #[ORM\JoinColumn(nullable: false, referencedColumnName: "name", name: 'skill_name')]
-    private ?Skill $skill = null;
+    private Skill $skill;
 
     public function __construct() {}
 
@@ -38,7 +38,7 @@ class ArtistTitleContribution
         return $this->artist;
     }
 
-    public function setArtist(?Artist $artist): static
+    public function setArtist(Artist $artist): static
     {
         $this->artist = $artist;
 
@@ -50,7 +50,7 @@ class ArtistTitleContribution
         return $this->title;
     }
 
-    public function setTitle(?Title $title): static
+    public function setTitle(Title $title): static
     {
         $this->title = $title;
 

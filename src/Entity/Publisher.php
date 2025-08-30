@@ -4,6 +4,8 @@ namespace App\Entity;
 
 use App\Contract\Entity\HasUploadedImagesInterface;
 use App\Entity\Trait\HasUploadedImagesTrait;
+use App\Entity\Trait\TimestampableTrait;
+use App\Entity\PublisherCollection;
 use App\Repository\PublisherRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -16,6 +18,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 class Publisher implements HasUploadedImagesInterface
 {
     use HasUploadedImagesTrait;
+    use TimestampableTrait;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -25,7 +28,7 @@ class Publisher implements HasUploadedImagesInterface
 
     #[Groups(['publisher:read'])]
     #[ORM\Column(length: 255)]
-    private ?string $name = null;
+    private string $name;
 
     #[Groups(['publisher:read'])]
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
@@ -34,14 +37,6 @@ class Publisher implements HasUploadedImagesInterface
     #[Groups(['publisher:read'])]
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     private ?\DateTime $deathDate = null;
-
-    #[ORM\Column]
-    #[Groups(['publisher:read'])]
-    private ?\DateTimeImmutable $createdAt = null;
-
-    #[ORM\Column]
-    #[Groups(['publisher:read'])]
-    private ?\DateTimeImmutable $updatedAt = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['publisher:read'])]
@@ -65,10 +60,10 @@ class Publisher implements HasUploadedImagesInterface
     private Collection $series;
 
     /**
-     * @var Collection<int, Publisher>
+     * @var Collection<int, PublisherCollection>
      */
-    #[ORM\OneToMany(targetEntity: Publisher::class, mappedBy: 'publisher')]
-    private ?Collection $collections = null;
+    #[ORM\OneToMany(targetEntity: PublisherCollection::class, mappedBy: 'publisher')]
+    private Collection $collections;
 
     public function __construct()
     {
@@ -142,18 +137,6 @@ class Publisher implements HasUploadedImagesInterface
         return $this;
     }
 
-    public function getUpdatedAt(): ?\DateTimeImmutable
-    {
-        return $this->updatedAt;
-    }
-
-    public function setUpdatedAt(\DateTimeImmutable $updatedAt): static
-    {
-        $this->updatedAt = $updatedAt;
-
-        return $this;
-    }
-
     public function getDescription(): ?string
     {
         return $this->description;
@@ -166,19 +149,6 @@ class Publisher implements HasUploadedImagesInterface
         return $this;
     }
 
-    #[ORM\PrePersist]
-    public function timestampOnCreate(): void
-    {
-        $now = new \DateTimeImmutable();
-        $this->createdAt = $now;
-        $this->updatedAt = $now;
-    }
-
-    #[ORM\PreUpdate]
-    public function timestampOnUpdate(): void
-    {
-        $this->updatedAt = new \DateTimeImmutable();
-    }
 
     /**
      * @return Collection<int, Title>
@@ -248,9 +218,9 @@ class Publisher implements HasUploadedImagesInterface
     }
 
     /**
-     * @param Collection<PublisherCollection>|null
+     * @param Collection<int, PublisherCollection> $collections
      */
-    public function setCollections(?Collection $collections): static
+    public function setCollections(Collection $collections): static
     {
         $this->collections = $collections;
 

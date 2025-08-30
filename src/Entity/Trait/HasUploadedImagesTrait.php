@@ -16,7 +16,7 @@ trait HasUploadedImagesTrait
      */
     #[Groups(['title:read', 'artist:read'])]
     #[ORM\ManyToMany(targetEntity: UploadedImage::class)]
-    private ?Collection $uploadedImages = null;
+    private Collection $uploadedImages;
 
     #[Groups(['title:read', 'artist:read', 'publisher:read'])]
     #[ORM\ManyToOne(targetEntity: UploadedImage::class, cascade: ['persist'])]
@@ -25,13 +25,16 @@ trait HasUploadedImagesTrait
     /**
      * @return Collection<int, UploadedImage>
      */
-    public function getUploadedImages(): ?Collection
+    public function getUploadedImages(): Collection
     {
-        if (is_null($this->uploadedImages)) {
+        if (!isset($this->uploadedImages)) {
             $this->uploadedImages = new ArrayCollection();
         }
         return $this->uploadedImages;
     }
+    /**
+     * @param Collection<int, UploadedImage>|null $uploadedImages
+     */
     public function setUploadedImages(?Collection $uploadedImages): static
     {
         $this->uploadedImages = $uploadedImages ?? new ArrayCollection();
@@ -40,6 +43,7 @@ trait HasUploadedImagesTrait
 
     public function addUploadedImage(UploadedImage $uploadedImage): static
     {
+
         if (!$this->getUploadedImages()->contains($uploadedImage)) {
             $this->uploadedImages->add($uploadedImage);
         }
@@ -55,9 +59,9 @@ trait HasUploadedImagesTrait
             return $this;
         }
 
-        if (is_int($image)) {
+        if (!is_null($this->coverImage)) {
             if ($this->coverImage->getId() === $image) $this->coverImage = null;
-            $image = $this->getUploadedImagesById($image);
+            $image = $this->getUploadedImageById($image);
             if (is_null($image)) return $this;
             $this->getUploadedImages()->removeElement($image);
             return $this;
@@ -82,7 +86,7 @@ trait HasUploadedImagesTrait
         return null;
     }
 
-    public function setCoverImage(?UploadedImage $coverImage): static
+    public function setCoverImage(UploadedImage $coverImage): static
     {
         $this->addUploadedImage($coverImage);
         $this->coverImage = $coverImage;
