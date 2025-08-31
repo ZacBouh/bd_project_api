@@ -27,11 +27,11 @@ class Series
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    private ?string $name = null;
+    private string $name;
 
     #[ORM\ManyToOne(inversedBy: 'series')]
     #[ORM\JoinColumn(nullable: false)]
-    private ?Publisher $publisher = null;
+    private Publisher $publisher;
 
     /**
      * @var Collection<int, Title>
@@ -66,7 +66,7 @@ class Series
         return $this->publisher;
     }
 
-    public function setPublisher(?Publisher $publisher): static
+    public function setPublisher(Publisher $publisher): static
     {
         $this->publisher = $publisher;
 

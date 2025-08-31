@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Contract\Entity\HasUploadedImagesInterface;
+use App\Entity\Trait\HasDefaultNormalizeCallback;
 use App\Entity\Trait\HasUploadedImagesTrait;
 use App\Entity\Trait\TimestampableTrait;
 use App\Repository\ArtistRepository;
@@ -19,6 +20,8 @@ class Artist implements HasUploadedImagesInterface
 {
     use HasUploadedImagesTrait;
     use TimestampableTrait;
+    /** @use HasDefaultNormalizeCallback<self>  */
+    use HasDefaultNormalizeCallback;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -187,5 +190,10 @@ class Artist implements HasUploadedImagesInterface
         $firstName = $this->firstName;
         $lastName = $this->lastName;
         return "$firstName $lastName";
+    }
+
+    public function getName(): string
+    {
+        return $this->getFullName();
     }
 }

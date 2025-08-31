@@ -2,18 +2,25 @@
 
 namespace App\Entity;
 
+use App\Entity\Trait\HasDefaultNormalizeCallback;
+use App\Entity\Trait\TimestampableTrait;
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Serializer\Attribute\Ignore;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\HasLifecycleCallbacks]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
+    use TimestampableTrait;
+    /** @use HasDefaultNormalizeCallback<self> */
+    use HasDefaultNormalizeCallback;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -22,19 +29,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 255)]
     #[Groups(['user:read'])]
-    private ?string $pseudo = null;
+    private string $pseudo;
 
-    #[ORM\Column(length: 180)]
+    #[Assert\NotBlank]
+    #[Assert\Email]
+    #[ORM\Column(length: 180, type: 'string', unique: true, nullable: false)]
     #[Groups(['user:read'])]
-    private ?string $email = null;
-
-    #[ORM\Column]
-    #[Groups(['user:read'])]
-    private ?\DateTimeImmutable $createdAt = null;
-
-    #[ORM\Column]
-    #[Groups(['user:read'])]
-    private ?\DateTimeImmutable $updatedAt = null;
+    private string $email;
 
     /**
      * @var list<string> The user roles
@@ -48,7 +49,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     #[ORM\Column]
     #[Ignore]
-    private ?string $password = null;
+    private string $password;
 
     #[ORM\Column(nullable: true)]
     private ?string $googleSub = null;
@@ -63,16 +64,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->googleSub;
     }
 
-    public function getCreatedAt(): ?\DateTimeImmutable
-    {
-        return $this->createdAt;
-    }
-
-    public function getUpdatedAt(): ?\DateTimeImmutable
-    {
-        return $this->updatedAt;
-    }
-
     public function getEmail(): ?string
     {
         return $this->email;
@@ -84,6 +75,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function setEmail(string $email): static
     {
+        if ($email === "") {
+            throw new \InvalidArgumentException('Email cannot be an empty string.');
+        }
+
         $this->email = $email;
 
         return $this;
@@ -107,10 +102,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      * A visual identifier that represents this user.
      *
      * @see UserInterface
+     * 
+     * @return non-empty-string
      */
     public function getUserIdentifier(): string
     {
-        return (string) $this->email;
+        if ($this->email === '') {
+            throw new \LogicException('Email must not be empty broken.');
+        }
+        return $this->email;
     }
 
     /**
@@ -159,20 +159,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $data["\0" . self::class . "\0password"] = hash('crc32c', $this->password);
 
         return $data;
-    }
-
-    #[ORM\PrePersist]
-    public function setCreatedAtValue(): void
-    {
-        $now = new \DateTimeImmutable();
-        $this->createdAt = $now;
-        $this->updatedAt = $now;
-    }
-
-    #[ORM\PreUpdate]
-    public function setUpdatedAtValue(): void
-    {
-        $this->updatedAt = new \DateTimeImmutable();
     }
 
     #[\Deprecated]

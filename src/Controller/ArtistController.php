@@ -2,7 +2,6 @@
 
 namespace App\Controller;
 
-use App\ArgumentResolver\ArtistPayloadResolver;
 use App\DTO\Artist\ArtistReadDTOBuilder;
 use App\Repository\ArtistRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;

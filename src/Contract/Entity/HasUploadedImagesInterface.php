@@ -8,11 +8,14 @@ use Doctrine\Common\Collections\Collection;
 interface HasUploadedImagesInterface
 {
     /**
-     * @return Collection<int, UploadedImage>|null
+     * @return Collection<int, UploadedImage>
      */
-    public function getUploadedImages(): ?Collection;
+    public function getUploadedImages(): Collection;
 
-    public function setUploadedImages(?Collection $uploadedImages): static;
+    /**
+     *  @param Collection<int, UploadedImage> $uploadedImages
+     */
+    public function setUploadedImages(Collection $uploadedImages): static;
 
     public function addUploadedImage(UploadedImage $uploadedImage): static;
 
@@ -24,7 +27,7 @@ interface HasUploadedImagesInterface
 
     public function getCoverImage(): ?UploadedImage;
 
-    public function setCoverImage(?UploadedImage $coverImage): static;
+    public function setCoverImage(UploadedImage $coverImage): static;
 
     public function getUploadedImageById(int $imageId): ?UploadedImage;
 }

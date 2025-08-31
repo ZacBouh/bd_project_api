@@ -4,6 +4,8 @@ namespace App\Mapper;
 
 use Doctrine\ORM\EntityManagerInterface;
 use InvalidArgumentException;
+use LogicException;
+use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use ReflectionClass;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
@@ -17,19 +19,41 @@ use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 abstract class AbstractEntityMapper
 {
-
+    /**
+     * @var array<string, mixed>
+     */
     protected array $data = [];
     /**
      * @var TEntity $entity
      */
     protected object $entity;
 
+    protected NormalizerInterface $normalizer;
+    protected DenormalizerInterface $denormalizer;
+    protected LoggerInterface $logger;
+    protected EntityManagerInterface $em;
+
     public function __construct(
-        protected NormalizerInterface $normalizer,
-        protected DenormalizerInterface $denormalizer,
-        protected EntityManagerInterface $em,
-        private ?LoggerInterface $logger = null,
-    ) {}
+        protected ContainerInterface $container,
+        ?NormalizerInterface $norm = null,
+        ?DenormalizerInterface $denorm = null,
+        ?LoggerInterface $log = null,
+        ?EntityManagerInterface $entitymngr = null,
+    ) {
+        /** @var NormalizerInterface $normalizer */
+        $normalizer = $norm ?? $container->get(NormalizerInterface::class);
+        /** @var DenormalizerInterface $denormalizer */
+        $denormalizer = $denorm ?? $container->get(DenormalizerInterface::class);
+        /** @var LoggerInterface $logger */
+        $logger = $log ?? $container->get(LoggerInterface::class);
+        /** @var EntityManagerInterface $em */
+        $em = $entitymngr ?? $container->get(EntityManagerInterface::class);
+
+        $this->normalizer = $normalizer;
+        $this->denormalizer = $denormalizer;
+        $this->logger = $logger;
+        $this->em = $em;
+    }
 
     /**
      * Should return the class-string of the target entity
@@ -61,10 +85,16 @@ abstract class AbstractEntityMapper
     {
         if (property_exists($dto, 'id')) {
             $id = $dto->id;
+            if (!(is_scalar($id) || is_null($id))) {
+                throw new InvalidArgumentException('Id must be an integer');
+            }
             return $id !== null ? (int) $id : null;
         }
         if (method_exists($dto, 'getId')) {
             $id = $dto->getId();
+            if (!(is_scalar($id) || is_null($id))) {
+                throw new InvalidArgumentException('Id must be an integer');
+            }
             return $id !== null ? (int) $id : null;
         }
         $this->logger->warning('AbstractEntityMapper : id is null or no accessor was found on ' . $this->getEntityClass());
@@ -82,6 +112,9 @@ abstract class AbstractEntityMapper
             throw new InvalidArgumentException('The provided entity has no getId accessor');
         }
         $id = $entity->getId();
+        if (!(is_scalar($id) || is_null($id))) {
+            throw new InvalidArgumentException('Id must be an integer');
+        }
         return is_null($id) ? null : (int) $id;
     }
 
@@ -102,6 +135,7 @@ abstract class AbstractEntityMapper
     /**
      * @param TEntity $entity
      * @param TDTO $dto
+     * @param array<mixed> $extra 
      */
     public function fromWriteDTO(object $dto, ?object $entity = null, array $extra = []): object
     {
@@ -135,27 +169,38 @@ abstract class AbstractEntityMapper
         /** @var TEntity $entity */
         $this->entity = $entity;
 
-        $this->data = $this->normalizer->normalize($dto, 'array');
+        /** @var array<string, mixed> $normalized */
+        $normalized = $this->normalizer->normalize($dto, 'array');
+        $this->data = $normalized;
         foreach ($this->getIgnoredFields() as $field) {
             $this->logger->warning(sprintf('unsetting field %s', $field));
             unset($this->data[$field]);
         }
 
+        /** @var TEntity $entity */
         $entity = $this->denormalizeToEntity($this->data, $entity, $extra);
+        // if ($entity::class !== $this->getEntityClass()) {
+        //     throw new LogicException('The denormalized object is not an instance of ' . $this->getEntityClass());
+        // }
         $entity = $this->afterDenormalization($dto, $entity, $extra);
         $this->entity = $entity;
         return $entity;
     }
 
     /**
+     * @param array<string, mixed> $data
+     * @param array<mixed> $extra
      * @param TEntity $entity
-     * @param TDTO $dto
+     * @return TEntity
      */
     protected function denormalizeToEntity(
         array $data,
         ?object $entity = null,
         array $extra = []
     ) {
+        if (is_null($entity)) {
+            $entity = $this->instantiateEntity();
+        }
         $this->denormalizer->denormalize(
             $this->data,
             $this->getEntityClass(),
@@ -173,6 +218,8 @@ abstract class AbstractEntityMapper
      * Applies additional operations after denormalization. Default does no-op.
      * @param TEntity $entity
      * @param TDTO $dto
+     * @param array<mixed> $extra
+     * @return TEntity
      */
     protected function afterDenormalization(
         object $dto,

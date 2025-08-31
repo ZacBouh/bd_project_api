@@ -9,6 +9,9 @@ use Webmozart\Assert\Assert as AssertAssert;
 
 class PublisherCollectionWriteDTO
 {
+    /**
+     * @param int[] $titleIds 
+     */
     public function __construct(
         #[Assert\NotBlank(message: 'PublisherCollection name cannot be blank')]
         public string $name,

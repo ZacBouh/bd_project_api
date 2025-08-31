@@ -2,8 +2,16 @@
 
 namespace App\DTO\Artist;
 
+use App\DTO\UploadedImage\UploadedImageReadDTO;
+use App\DTO\TitleContribution\ArtistTitleContributionReadDTO;
+
 class ArtistReadDTO
 {
+    /**
+     * @param string[] $skills
+     * @param array<int, UploadedImageReadDTO> $uploadedImages
+     * @param array<int, ArtistTitleContributionReadDTO>|null $titlesContributions
+     */
     public function __construct(
         public int $id,
         public string $firstName,
@@ -12,7 +20,7 @@ class ArtistReadDTO
         public ?string $birthDate,
         public ?string $deathDate,
         public array $skills,
-        public ?array $coverImage,
+        public ?UploadedImageReadDTO $coverImage,
         public array $uploadedImages,
         public ?array $titlesContributions,
         public ?\DateTime $createdAt,

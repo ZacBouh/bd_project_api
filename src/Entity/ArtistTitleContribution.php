@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Entity\Trait\HasDefaultNormalizeCallback;
 use App\Repository\ArtistTitleContributionRepository;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -9,6 +10,9 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: ArtistTitleContributionRepository::class)]
 class ArtistTitleContribution
 {
+    /** @use HasDefaultNormalizeCallback<self> */
+    use HasDefaultNormalizeCallback;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -33,7 +37,7 @@ class ArtistTitleContribution
         return $this->id;
     }
 
-    public function getArtist(): ?Artist
+    public function getArtist(): Artist
     {
         return $this->artist;
     }
@@ -45,7 +49,7 @@ class ArtistTitleContribution
         return $this;
     }
 
-    public function getTitle(): ?Title
+    public function getTitle(): Title
     {
         return $this->title;
     }

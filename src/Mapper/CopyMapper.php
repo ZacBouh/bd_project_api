@@ -23,9 +23,6 @@ class CopyMapper
     public function __construct(
         private NormalizerInterface $normalizer,
         private DenormalizerInterface $denormalizer,
-        private UserRepository $userRepository,
-        private TitleRepository $titleRepository,
-        private UploadedImageRepository $uploadedImageRepository,
         private EntityManagerInterface $entityManager,
     ) {}
 
@@ -48,11 +45,6 @@ class CopyMapper
             unset($data[$fieldName]);
         }
 
-        $enumCallbacks = [
-            'copyCondition' => fn($value) => $value instanceof CopyCondition ? $value : (is_null($value) ? null : CopyCondition::from($value)),
-            'currency' => fn($value) => $value instanceof PriceCurrency ? $value : (is_null($value) ? null : PriceCurrency::from($value)),
-            'boughtForCurrency' => fn($value) => $value instanceof PriceCurrency ? $value : (is_null($value) ? null : PriceCurrency::from($value)),
-        ];
 
         $this->denormalizer->denormalize($data, Copy::class, 'array', [
             AbstractNormalizer::OBJECT_TO_POPULATE => $copy,

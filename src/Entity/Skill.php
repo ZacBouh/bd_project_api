@@ -10,7 +10,7 @@ class Skill
 {
     #[ORM\Id]
     #[ORM\Column(length: 255)]
-    private ?string $name = null;
+    private string $name;
 
     public function getName(): ?string
     {

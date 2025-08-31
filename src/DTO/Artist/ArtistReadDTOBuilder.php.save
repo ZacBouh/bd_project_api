@@ -2,25 +2,30 @@
 
 namespace App\DTO\Artist;
 
-use App\DTO\Builder\AbstractDTOBuilder;
+use App\DTO\Builder\DTOBuilder;
 use App\Entity\Artist;
 
-/**
- * @extends AbstractDTOBuilder<Artist>
- */
-class ArtistReadDTOBuilder extends AbstractDTOBuilder
+class ArtistReadDTOBuilder
 {
-    protected Artist $entity;
+    public function __construct(
+        private DTOBuilder $builder,
+    ) {}
 
     public function fromEntity(Artist $artist): static
     {
-        $this->entity = $artist;
-        return parent::readDTOFromEntity($artist);
+        $skillNames = [];
+        foreach ($artist->getSkills() as $skill) {
+            $skillNames[] = $skill->getName();
+        }
+        $this->builder
+            ->fromEntity($artist, 'artist:read')
+            ->addField('skills', $skillNames);
+        return $this;
     }
 
     public function withContributions(): static
     {
-        $artist = $this->entity;
+        $artist = $this->builder->getEntity();
         $titlesContributions = [];
         foreach ($artist->getTitlesContributions() as $contribution) {
             $id = $contribution->getTitle()->getId();
@@ -34,35 +39,24 @@ class ArtistReadDTOBuilder extends AbstractDTOBuilder
                 ];
             }
         }
-        $this->data['titlesContributions'] = array_values($titlesContributions);
+        $this->builder->addField('titlesContributions', array_values($titlesContributions));
         return $this;
     }
 
     public function withCoverImage(): static
     {
+        $this->builder->addCoverImage();
         return $this;
     }
 
     public function withUploadedImages(): static
     {
+        $this->builder->addUploadedImages();
         return $this;
     }
 
-    public function build(?string $dtoClass = ArtistReadDTO::class): ArtistReadDTO
+    public function build(?string $dtoClass = ArtistReadDTO::class)
     {
-
-        return parent::denormalizeToDTO(ArtistReadDTO::class);
-    }
-
-    /**
-     * @return array<callable>
-     */
-    protected function getNormalizerCallbacks(): array
-    {
-        $defaultCallbacks = parent::getNormalizerCallbacks();
-        return [
-            ...$defaultCallbacks,
-            'titleContributions' => $defaultCallbacks['artistsContributions']
-        ];
+        return $this->builder->build($dtoClass);
     }
 }

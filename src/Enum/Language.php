@@ -32,6 +32,9 @@ enum Language: string
         return Languages::getName($this->value, $locale);
     }
 
+    /**
+     * @return string[]
+     */
     public static function getCodesList(): array
     {
         return array_map(fn(self $lang) => $lang->value, self::cases());

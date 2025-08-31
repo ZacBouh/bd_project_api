@@ -11,6 +11,6 @@ enum PriceCurrency: string
 
     public function label(): string
     {
-        return self::LABELS[$this->value] ?? $this->value;
+        return self::LABELS[$this->value];
     }
 }

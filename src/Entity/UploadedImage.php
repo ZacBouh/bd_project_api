@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Entity\Trait\TimestampableTrait;
 use App\Repository\UploadedImageRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -10,10 +11,16 @@ use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Serializer\Attribute\Ignore;
 use Vich\UploaderBundle\Mapping\Annotation as Vich;
 
+
+/**
+ * @phpstan-type UploadedImageDimensions array{0: int, 1: int}
+ */
 #[ORM\Entity(repositoryClass: UploadedImageRepository::class)]
 #[Vich\Uploadable]
 class UploadedImage
 {
+    use TimestampableTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -26,28 +33,27 @@ class UploadedImage
 
     #[Groups(['titleReadDTO', 'uploadedImage:read'])]
     #[ORM\Column(length: 255)]
-    private ?string $imageName = null;
+    private string $imageName;
 
     #[Groups(['titleReadDTO', 'uploadedImage:read'])]
     #[ORM\Column(nullable: true)]
-    private ?int $fileSize = null;
-
-    #[Groups(['titleReadDTO', 'uploadedImage:read'])]
-    #[ORM\Column(nullable: true)]
-    private ?\DateTimeImmutable $updatedAt = null;
+    private ?int $fileSize;
 
     #[Groups(['titleReadDTO', 'uploadedImage:read'])]
     #[ORM\Column(length: 255)]
-    private ?string $fileName = null;
+    private string $fileName;
 
     #[Groups(['titleReadDTO', 'uploadedImage:read'])]
     #[ORM\Column(length: 255)]
-    private ?string $originalFileName = null;
+    private string $originalFileName;
 
     #[Groups(['titleReadDTO', 'uploadedImage:read'])]
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $fileMimeType = null;
 
+    /**
+     *  @var UploadedImageDimensions | null
+     */
     #[Groups(['titleReadDTO', 'uploadedImage:read'])]
     #[ORM\Column(length: 20, nullable: true, type: Types::JSON)]
     private ?array $imageDimensions = null;
@@ -58,7 +64,7 @@ class UploadedImage
         return $this->id;
     }
 
-    public function getFileName()
+    public function getFileName(): string
     {
         return $this->fileName;
     }
@@ -68,7 +74,7 @@ class UploadedImage
         return $this;
     }
 
-    public function getFileMimeType()
+    public function getFileMimeType(): ?string
     {
         return $this->fileMimeType;
     }
@@ -78,17 +84,21 @@ class UploadedImage
         return $this;
     }
 
+    /** @return array{0:int,1:int}  */
     public function getImageDimensions(): ?array
     {
         return $this->imageDimensions;
     }
+    /**
+     * @param array{0:int, 1:int} $imageDimensions
+     */
     public function setImageDimensions(array $imageDimensions): static
     {
         $this->imageDimensions = $imageDimensions;
         return $this;
     }
 
-    public function getOriginalFileName()
+    public function getOriginalFileName(): string
     {
         return $this->originalFileName;
     }
@@ -122,18 +132,6 @@ class UploadedImage
         return $this;
     }
 
-    public function getUpdatedAt(): ?\DateTimeImmutable
-    {
-        return $this->updatedAt;
-    }
-
-    public function setUpdatedAt(?\DateTimeImmutable $updatedAt): static
-    {
-        $this->updatedAt = $updatedAt;
-
-        return $this;
-    }
-
     public function getFile(): ?File
     {
         return $this->file;
@@ -147,7 +145,7 @@ class UploadedImage
         // otherwise the event listeners won't be called and the file is lost
         // check documentation at https://github.com/dustin10/VichUploaderBundle/blob/master/docs/usage.md
         if (null !== $file) {
-            $this->updatedAt = new \DateTimeImmutable();
+            $this->updatedAt = new \DateTime();
         }
 
         return $this;

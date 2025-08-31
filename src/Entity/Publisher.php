@@ -6,6 +6,7 @@ use App\Contract\Entity\HasUploadedImagesInterface;
 use App\Entity\Trait\HasUploadedImagesTrait;
 use App\Entity\Trait\TimestampableTrait;
 use App\Entity\PublisherCollection;
+use App\Entity\Trait\HasDefaultNormalizeCallback;
 use App\Repository\PublisherRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -19,6 +20,8 @@ class Publisher implements HasUploadedImagesInterface
 {
     use HasUploadedImagesTrait;
     use TimestampableTrait;
+    /** @use HasDefaultNormalizeCallback<self> */
+    use HasDefaultNormalizeCallback;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -200,12 +203,7 @@ class Publisher implements HasUploadedImagesInterface
 
     public function removeSeries(Series $series): static
     {
-        if ($this->series->removeElement($series)) {
-            // set the owning side to null (unless already changed)
-            if ($series->getPublisher() === $this) {
-                $series->setPublisher(null);
-            }
-        }
+        $this->series->removeElement($series);
 
         return $this;
     }

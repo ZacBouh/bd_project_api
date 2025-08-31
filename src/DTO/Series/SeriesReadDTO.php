@@ -3,10 +3,18 @@
 namespace App\DTO\Series;
 
 use App\DTO\Publisher\PublisherReadDTO;
+use App\DTO\UploadedImage\UploadedImageReadDTO;
+use App\Entity\Trait\HasDefaultNormalizeCallback;
 
+/**
+ * @phpstan-import-type NormalizeCallbackDefaultReturn from HasDefaultNormalizeCallback
+ */
 class SeriesReadDTO
 {
-    /** @param int[]|null $titles */
+    /** 
+     * @param int[]|null $titles 
+     * @param NormalizeCallbackDefaultReturn $publisher 
+     */
     public function __construct(
         public int $id,
 
@@ -24,7 +32,7 @@ class SeriesReadDTO
 
         public ?string $onGoingStatus,
 
-        public ?array $coverImage,
+        public ?UploadedImageReadDTO $coverImage,
 
     ) {}
 }

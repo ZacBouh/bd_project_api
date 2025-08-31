@@ -10,6 +10,9 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 class SeriesWriteDTO
 {
+    /**
+     * @param int[] $titlesId
+     */
     public function __construct(
         #[Assert\NotBlank(message: 'Series name cannot be blank')]
         public string $name,

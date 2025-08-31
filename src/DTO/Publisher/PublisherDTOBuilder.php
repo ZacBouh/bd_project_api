@@ -2,45 +2,32 @@
 
 namespace App\DTO\Publisher;
 
-use App\DTO\Builder\DTOBuilder;
-use App\DTO\Builder\EntityDTOBuilderInterface;
-use App\Entity\Title;
+use App\DTO\Builder\AbstractDTOBuilder;
 use App\Entity\Publisher;
+use Psr\Log\LoggerInterface;
+use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
-class PublisherDTOBuilder implements EntityDTOBuilderInterface
+
+/**
+ * @extends AbstractDTOBuilder<Publisher>
+ */
+class PublisherDTOBuilder extends AbstractDTOBuilder
 {
-    public function __construct(
-        private DTOBuilder $builder,
-    ) {}
 
-
-    /** @param Publisher $entity */
-    public function fromEntity(object $entity, array|string $groups = []): static
+    /** 
+     * @param Publisher $entity 
+     */
+    public function fromEntity(object $entity): static
     {
-        $this->builder->fromEntity($entity, 'publisher:read');
-        $this->builder->addCoverImage();
-        return $this;
+        return parent::readDTOFromEntity($entity);
     }
 
-    public function withTitlesIds(): static
-    {
-        $titlesIds = [];
-        /** @var Title[] */
-        $titleEntities = $this->builder->getEntity();
-        foreach ($titleEntities as $title) {
-            $titlesIds[] = $title->getId();
-        }
-        return $this;
-    }
-
-    public function withUploadedImages(): static
-    {
-        $this->builder->addUploadedImages();
-        return $this;
-    }
-
+    /**
+     * @param class-string<PublisherReadDTO>|class-string<PublisherWriteDTO> $dtoClass
+     */
     public function build(string $dtoClass = PublisherReadDTO::class): object
     {
-        return $this->builder->build($dtoClass);
+        return parent::denormalizeToDTO($dtoClass);
     }
 }

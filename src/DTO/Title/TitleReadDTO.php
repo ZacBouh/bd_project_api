@@ -2,19 +2,29 @@
 
 namespace App\DTO\Title;
 
-use App\Enum\Language;
+use App\DTO\TitleContribution\ArtistTitleContributionReadDTO;
+use App\DTO\UploadedImage\UploadedImageReadDTO;
+use App\Entity\Trait\HasDefaultNormalizeCallback;
 
+/**
+ * @phpstan-import-type NormalizeCallbackDefaultReturn from HasDefaultNormalizeCallback
+ */
 class TitleReadDTO
 {
+    /**
+     * @param NormalizeCallbackDefaultReturn $publisher
+     * @param array<UploadedImageReadDTO> $uploadedImages
+     * @param array<ArtistTitleContributionReadDTO> $artistsContributions
+     */
     public function __construct(
         public int $id,
         public string $name,
-        public ?Language $language,
-        public \DateTime $releaseDate,
-        public ?string $description,
         public array $publisher,
-        public array $artistsContributions,
-        public array $uploadedImages,
-        public array $coverImage
+        public string $language,
+        public ?string $description,
+        public ?array $artistsContributions,
+        public ?UploadedImageReadDTO $coverImage,
+        public ?string $releaseDate,
+        public ?array $uploadedImages,
     ) {}
 }
