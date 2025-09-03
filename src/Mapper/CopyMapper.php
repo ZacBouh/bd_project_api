@@ -2,15 +2,10 @@
 
 namespace App\Mapper;
 
-use App\DTO\Copy\CopyReadDTO;
+use App\DTO\Copy\CopyWriteDTO;
 use App\Entity\Copy;
 use App\Entity\UploadedImage;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
-use App\Enum\CopyCondition;
-use App\Enum\PriceCurrency;
-use App\Repository\TitleRepository;
-use App\Repository\UploadedImageRepository;
-use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityNotFoundException;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
@@ -18,73 +13,18 @@ use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use App\Entity\Title;
 use App\Entity\User;
 
-class CopyMapper
+/**
+ * @extends AbstractEntityMapper<Copy, CopyWriteDTO>
+ */
+class CopyMapper extends AbstractEntityMapper
 {
-    public function __construct(
-        private NormalizerInterface $normalizer,
-        private DenormalizerInterface $denormalizer,
-        private EntityManagerInterface $entityManager,
-    ) {}
-
-    public function fromDTO(CopyReadDTO $copyDTO, ?Copy $copy = null): Copy
+    protected function getEntityClass(): string
     {
-        if (is_null($copy)) {
-            $copy = new Copy();
-        }
-        $data = $this->normalizer->normalize($copyDTO, 'array');
-        $ignoredFields = [
-            'id',
-            'owner',
-            'title',
-            'createdAt',
-            'updatedAt',
-            'coverImage',
-            'uploadedImages',
-        ];
-        foreach ($ignoredFields as $fieldName) {
-            unset($data[$fieldName]);
-        }
-
-
-        $this->denormalizer->denormalize($data, Copy::class, 'array', [
-            AbstractNormalizer::OBJECT_TO_POPULATE => $copy,
-            AbstractNormalizer::CALLBACKS => $enumCallbacks,
-            AbstractNormalizer::ALLOW_EXTRA_ATTRIBUTES => false,
-        ]);
-
-        if (($copyDTO->owner['id'] ?? null) !== $copy->getOwner()?->getId()) {
-            $user = $this->checkEntityExists(User::class, $copyDTO->owner['id']);
-            $copy->setOwner($user);
-        }
-
-        if (($copyDTO->title['id'] ?? null) !== $copy->getTitle()?->getId()) {
-            $title = $this->checkEntityExists(Title::class, $copyDTO->title['id']);
-            $copy->setTitle($title);
-        }
-
-        if (($copyDTO->coverImage['id'] ?? null) !== $copy->getCoverImage()?->getId()) {
-            $image = $this->checkEntityExists(UploadedImage::class, $copyDTO->coverImage['id']);
-            $copy->setCoverImage($image);
-        }
-
-        return $copy;
+        return Copy::class;
     }
 
-    public function checkEntityExists(string $entityClass, int|string $id): object
+    protected function instantiateEntity(): object
     {
-        $repo = $this->entityManager->getRepository($entityClass);
-
-        $result =  $repo->createQueryBuilder('e')
-            ->select('1')
-            ->andWhere('e.id = :id')
-            ->setParameter('id', $id)
-            ->setMaxResults(1)
-            ->getQuery()
-            ->getOneOrNullResult() !== null;
-        if (!$result) {
-            throw new EntityNotFoundException('CopyMapper : no ' . $entityClass . ' found for id ' . $id);
-        }
-
-        return $this->entityManager->getReference($entityClass, $id);
+        return new Copy();
     }
 }

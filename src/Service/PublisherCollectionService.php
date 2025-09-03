@@ -3,11 +3,10 @@
 namespace App\Service;
 
 use App\DTO\PublisherCollection\PublisherCollectionDTOBuilder;
-use App\Entity\Publisher;
+use App\DTO\PublisherCollection\PublisherCollectionReadDTO;
 use App\Entity\PublisherCollection;
 use App\Mapper\PublisherCollectionMapper;
 use App\Repository\PublisherCollectionRepository;
-use App\Repository\PublisherRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\FileBag;
@@ -18,7 +17,6 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 class PublisherCollectionService
 {
     public function __construct(
-        private LoggerInterface $logger,
         private ValidatorInterface $validator,
         private PublisherCollectionMapper $mapper,
         private PublisherCollectionDTOBuilder $dtoBuilder,
@@ -27,6 +25,9 @@ class PublisherCollectionService
         private PublisherCollectionRepository $repo,
     ) {}
 
+    /**
+     * @param InputBag<string> $inputBag
+     */
     public function createPublisherCollection(InputBag $inputBag, FileBag $files): PublisherCollection
     {
         $dto = $this->dtoBuilder->writeDTOFromInputBags($inputBag, $files)

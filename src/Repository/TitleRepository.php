@@ -16,6 +16,9 @@ class TitleRepository extends ServiceEntityRepository
         parent::__construct($registry, Title::class);
     }
 
+    /**
+     * @return array<Title>
+     */
     public function findWithAllRelations(): array
     {
         $qb = $this->createQueryBuilder('t')
@@ -26,6 +29,11 @@ class TitleRepository extends ServiceEntityRepository
             ->leftJoin('c.artist', 'a')->addSelect('a')
             ->leftJoin('c.skill', 's')->addSelect('s');
 
-        return $qb->getQuery()->getResult();
+
+        /**
+         * @var array<Title> $titles
+         */
+        $titles = $qb->getQuery()->getResult();
+        return $titles;
     }
 }

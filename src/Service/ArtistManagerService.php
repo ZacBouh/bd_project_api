@@ -2,51 +2,55 @@
 
 namespace App\Service;
 
+use App\DTO\Artist\ArtistReadDTOBuilder;
+use App\DTO\Artist\ArtistWriteDTO;
 use App\Entity\Artist;
-use App\Entity\Skill;
-use App\Entity\UploadedImage;
+use App\Mapper\ArtistEntityMapper;
 use App\Repository\ArtistRepository;
-use App\Repository\SkillRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Psr\Log\LoggerInterface;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\FileBag;
 use Symfony\Component\HttpFoundation\InputBag;
+use Symfony\Component\Validator\Exception\ValidationFailedException;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class ArtistManagerService
 {
 
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private SkillRepository $skillRepository,
-        private LoggerInterface $logger,
         private ArtistRepository $artistRepository,
         private UploadedImageService $imageService,
+        private ArtistReadDTOBuilder $dtoBuilder,
+        private ValidatorInterface $validator,
+        private ArtistEntityMapper $artistMapper,
     ) {}
 
-    public function createArtist(InputBag $newArtistContent, ?FileBag $files): Artist
+    /**
+     * @param InputBag<scalar> $newArtistContent
+     */
+    public function createArtist(InputBag $newArtistContent, FileBag $files): Artist
     {
-        $newArtist = new Artist();
-        $newArtist->setFirstName($newArtistContent->get('firstName'));
-        $newArtist->setLastName($newArtistContent->get('lastName'));
-        $newArtist->setBirthDate($newArtistContent->get('birthDate'));
-        $newArtist->setDeathDate($newArtistContent->get('deathDate'));
-        $newArtist->setPseudo($newArtistContent->get('pseudo'));
-        $skills = $this->skillRepository->findBy(['name' => $newArtistContent->all('skills')]);
-        foreach ($skills as $skill) {
-            $newArtist->addSkill($skill);
+        $dto = $this->dtoBuilder->writeDTOFromInputBags($newArtistContent, $files)->denormalizeToDTO(ArtistWriteDTO::class);
+        $violations = $this->validator->validate($dto);
+        if (count($violations) > 0) {
+            throw new ValidationFailedException($dto, $violations);
         }
-
-        if (!is_null($files)) {
-            $this->imageService->saveUploadedCoverImage($newArtist, $files, "Artist Picture");
+        $coverImage = null;
+        if (!is_null($dto->coverImageFile)) {
+            $coverImage = $this->imageService->saveUploadedImage($dto->coverImageFile, 'Artist Picture');
         }
+        $entity = $this->artistMapper->fromWriteDTO($dto, extra: ['coverImage' => $coverImage]);
 
-        $this->entityManager->persist($newArtist);
-        $this->entityManager->flush($newArtist);
+        $this->entityManager->persist($entity);
+        $this->entityManager->flush();
 
-        return $newArtist;
+        return $entity;
     }
 
+
+    /**
+     * @return array<Artist>
+     */
     public function getAll(): array
     {
         /** @var Array<int, Artist> $artists */

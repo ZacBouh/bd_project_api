@@ -6,10 +6,10 @@ use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
@@ -31,6 +31,9 @@ final class AuthController extends AbstractController
         $jsonData = $request->getContent();
         $this->logger->info("Received register request : $jsonData");
         $user = $serializer->deserialize($jsonData, User::class, 'json');
+        if (is_null($user->getPassword())) {
+            return $this->json(['message' => 'User registration request missing password'], Response::HTTP_BAD_REQUEST);
+        }
         $hashedPassword = $passwordHasher->hashPassword($user, $user->getPassword());
         $user->setPassword($hashedPassword);
         $entityManager->persist($user);
@@ -57,9 +60,10 @@ final class AuthController extends AbstractController
         #[MapQueryParameter('code')] string $code,
         #[MapQueryParameter('state')] string $jsonEncodedState,
         #[MapQueryParameter('scope')] string $scope,
-    ) {
+    ): RedirectResponse {
         $this->logger->critical("Received oauth2 request { code: $code, state: $jsonEncodedState, scope: '$scope'}");
         $configResponse = $this->httpClient->request('GET',  'https://accounts.google.com/.well-known/openid-configuration');
+        /** @var array<string, string> $openIdConfig */
         $openIdConfig = $configResponse->toArray();
         $tokenEndpoint = $openIdConfig['token_endpoint'];
         $headers = ['Content-Type' => 'application/x-www-form-urlencoded'];
@@ -74,8 +78,9 @@ final class AuthController extends AbstractController
         // $this->logger->warning("Token endpoint  : " . $tokenEndpoint);
         $tokenResponse = $this->httpClient->request('POST', $tokenEndpoint, ['headers' => $headers, 'body' => $body]);
         // $this->logger->critical("Received token response : " . json_encode($tokenResponse->toArray()));
+        /** @var string $access_token */
         $access_token = $tokenResponse->toArray()['access_token'];
-        $this->logger->warning("access_token : $access_token");
+        $this->logger->warning("Google OAuth access_token : $access_token");
         $userInfoResponse = $this->httpClient->request('GET', $openIdConfig["userinfo_endpoint"], ['headers' => ['Authorization' => "Bearer $access_token"]]);
         $this->logger->warning("retrieved user info from google : " . json_encode($userInfoResponse->toArray()));
         return $this->redirect('http://localhost:8082/titles');

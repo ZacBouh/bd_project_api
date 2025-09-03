@@ -21,7 +21,7 @@ class AuthenticationSuccessListener
         $data = $event->getData();
         $user = $event->getUser();
 
-        if (!$user instanceof UserInterface) {
+        if (!$user instanceof UserInterface) { // @phpstan-ignore-line
             return;
         }
 

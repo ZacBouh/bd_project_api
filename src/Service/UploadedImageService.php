@@ -13,16 +13,14 @@ use Symfony\Component\HttpFoundation\FileBag;
 class UploadedImageService
 {
     public function __construct(
-        private LoggerInterface $logger,
-        private UploadedImageRepository $uploadedImageRepo,
         private EntityManagerInterface $entityManager,
     ) {}
 
-    public function saveUploadedCoverImage(HasUploadedImagesInterface $entity, FileBag $files, ?string $imageName = "Cover Image")
+    public function saveUploadedCoverImage(HasUploadedImagesInterface $entity, FileBag $files, string $imageName = "Cover Image"): void
     {
         $file = $files->get('coverImageFile');
         if (is_null($file)) {
-            return false;
+            return;
         }
         if (!$file instanceof UploadedFile) {
             throw new \InvalidArgumentException("File argument passed to saveUploadedCoverImage is not a FileBag");
@@ -31,7 +29,7 @@ class UploadedImageService
         $entity->setCoverImage($coverImage);
     }
 
-    public function saveUploadedImage(UploadedFile $file, $imageName = "unnamed"): UploadedImage
+    public function saveUploadedImage(UploadedFile $file, string $imageName = "unnamed"): UploadedImage
     {
         $image =  (new UploadedImage())
             ->setFile($file)

@@ -3,40 +3,46 @@
 namespace App\Service;
 
 use App\DTO\Publisher\PublisherDTOBuilder;
-use App\DTO\Publisher\PublisherDTOFactory;
+use App\DTO\Publisher\PublisherWriteDTO;
+use App\DTO\Publisher\PublisherReadDTO;
 use App\Repository\PublisherRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Psr\Log\LoggerInterface;
 use App\Entity\Publisher;
+use App\Mapper\PublisherEntityMapper;
 use Symfony\Component\HttpFoundation\FileBag;
 use Symfony\Component\HttpFoundation\InputBag;
+use Symfony\Component\Validator\Exception\ValidationFailedException;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class PublisherManagerService
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
         private PublisherRepository $publisherRepository,
-        private LoggerInterface $logger,
         private UploadedImageService $imageService,
-        private PublisherDTOFactory $dtoFactory,
         private PublisherDTOBuilder $dtoBuilder,
+        private ValidatorInterface $validator,
+        private PublisherEntityMapper $publisherMapper,
     ) {}
 
-    public function createPublisher(InputBag $newPublisherContent, ?FileBag $files): Publisher
+    /**
+     * @param InputBag<string> $newPublisherContent
+     */
+    public function createPublisher(InputBag $newPublisherContent, FileBag $files): Publisher
     {
-        $newPublisher = new Publisher();
-        $newPublisher->setDescription($newPublisherContent->get('description'));
-        $newPublisher->setBirthDate($newPublisherContent->get('birthDate'));
-        $newPublisher->setDeathDate(new \DateTime($newPublisherContent->get('deathDate')));
-        $newPublisher->setName($newPublisherContent->get('name'));
-
-        if (!is_null($files)) {
-            $this->imageService->saveUploadedCoverImage($newPublisher, $files, "Publisher Logo");
+        $dto = $this->dtoBuilder->writeDTOFromInputBags($newPublisherContent, $files)->denormalizeToDTO(PublisherWriteDTO::class);
+        $violations = $this->validator->validate($dto);
+        if (count($violations) > 0) {
+            throw new ValidationFailedException($dto, $violations);
         }
-
-        $this->entityManager->persist($newPublisher);
+        $coverImage = null;
+        if (!is_null($dto->coverImageFile)) {
+            $coverImage = $this->imageService->saveUploadedImage($dto->coverImageFile, 'Publisher Logo');
+        }
+        $entity = $this->publisherMapper->fromWriteDTO($dto, extra: ['coverImage' => $coverImage]);
+        $this->entityManager->persist($entity);
         $this->entityManager->flush();
-        return $newPublisher;
+        return $entity;
     }
 
     /**
@@ -48,11 +54,7 @@ class PublisherManagerService
         $publishers = $this->publisherRepository->findWithAllRelations();
         foreach ($publishers as $publisher) {
             // $data[] = $this->dtoFactory->createFromEntity($publisher);
-            $builder = $this->dtoBuilder
-                ->fromEntity($publisher)
-                ->withTitlesIds()
-                ->withUploadedImages();
-            $data[] = $builder->build();
+            $data[] = $this->dtoBuilder->readDTOFromEntity($publisher)->denormalizeToDTO(PublisherReadDTO::class);
         }
         return $data;
     }

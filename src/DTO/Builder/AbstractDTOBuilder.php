@@ -5,9 +5,11 @@ namespace App\DTO\Builder;
 use App\DTO\UploadedImage\UploadedImageDTOBuilder;
 use App\Entity\ArtistTitleContribution;
 use App\Entity\Publisher;
+use App\Entity\Skill;
 use App\Entity\UploadedImage;
 use App\Entity\User;
 use App\Entity\Title;
+use Doctrine\ORM\EntityManagerInterface;
 use InvalidArgumentException;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -40,12 +42,14 @@ abstract class AbstractDTOBuilder
     protected DenormalizerInterface $denormalizer;
     protected LoggerInterface $logger;
     protected UploadedImageDTOBuilder $imageDTOBuilder;
+    protected EntityManagerInterface $em;
 
     public function __construct(
         protected ContainerInterface $container,
         ?NormalizerInterface $norm = null,
         ?DenormalizerInterface $denorm = null,
         ?LoggerInterface $log = null,
+        ?EntityManagerInterface $entityManager = null,
         ?UploadedImageDTOBuilder $imgDTOBuilder = null,
     ) {
         /** @var NormalizerInterface $normalizer */
@@ -56,11 +60,15 @@ abstract class AbstractDTOBuilder
         $logger = $log ?? $container->get(LoggerInterface::class);
         /** @var UploadedImageDTOBuilder $imageDTOBuilder */
         $imageDTOBuilder = $imgDTOBuilder ?? $container->get(UploadedImageDTOBuilder::class);
+        /** @var EntityManagerInterface $em */
+        $em = $entityManager ?? $container->get(EntityManagerInterface::class);
+
 
         $this->normalizer = $normalizer;
         $this->denormalizer = $denormalizer;
         $this->logger = $logger;
         $this->imageDTOBuilder = $imageDTOBuilder;
+        $this->em = $em;
     }
 
 
@@ -70,7 +78,18 @@ abstract class AbstractDTOBuilder
      */
     protected function getDenormalizerCallbacks(): array
     {
-        return [];
+        return [
+            'skill' => function ($skillName) {
+                if (!is_string($skillName) && !is_integer($skillName)) {
+                    throw new InvalidArgumentException(sprintf('Id for  %s must be a string or an int', Skill::class));
+                }
+                $ref = $this->em->getReference(Skill::class, $skillName);
+                if (is_null($ref)) {
+                    throw new InvalidArgumentException(sprintf('Could not get a ref for %s with id %s', Skill::class, $skillName));
+                }
+                return $ref;
+            }
+        ];
     }
     /**
      *  Callbacks used by the normalizer(Entity -> Array) to treat specific fields.
@@ -167,10 +186,12 @@ abstract class AbstractDTOBuilder
     }
 
     /**
-     * @param InputBag<scalar> $inputBag
+     * @template TInputBagContent of scalar
+     * @param InputBag<TInputBagContent> $inputBag
      */
     public function writeDTOFromInputBags(InputBag $inputBag, FileBag $fileBag): static
     {
+
         /** @var array<string, mixed> $all */
         $all = $inputBag->all();
         $this->data = $all;

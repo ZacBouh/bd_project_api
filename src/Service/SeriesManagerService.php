@@ -37,7 +37,7 @@ class SeriesManagerService
             $coverImage = $this->imageService->saveUploadedImage($seriesDTO->coverImageFile, $seriesDTO->name . ' Image');
         }
 
-        $series = $this->seriesMapper->fromWriteDTO($seriesDTO, $coverImage);
+        $series = $this->seriesMapper->fromWriteDTO($seriesDTO, extra: ['coverImage' => $coverImage]);
 
         $this->entityManager->persist($series);
         $this->entityManager->flush();

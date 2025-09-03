@@ -23,7 +23,10 @@ class CopyRepository extends ServiceEntityRepository
         parent::__construct($registry, Copy::class);
     }
 
-    public function findAllWithRelations()
+    /**
+     * @return array<Copy>
+     */
+    public function findAllWithRelations(): array
     {
         $qb = $this->createQueryBuilder('copy');
         /** @var User */
@@ -51,7 +54,10 @@ class CopyRepository extends ServiceEntityRepository
             ->addSelect('uploadedImage');
 
         // return $qb->getQuery()->getResult(Query::HYDRATE_ARRAY);
-        return $qb->getQuery()->getResult();
+
+        /** @var array<Copy> $copies  */
+        $copies = $qb->getQuery()->getResult();
+        return $copies;
     }
 
     //    /**

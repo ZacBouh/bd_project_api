@@ -21,13 +21,15 @@ class PublisherCollectionRepository extends ServiceEntityRepository
      */
     public function findAllWithPublisherAndImages(): array
     {
-        return $this->createQueryBuilder('pc')
+        /** @var array<PublisherCollection> $collections */
+        $collections =  $this->createQueryBuilder('pc')
             ->leftJoin('pc.publisher', 'p')->addSelect('p')
             ->leftJoin('pc.coverImage', 'ci')->addSelect('ci')
             ->leftJoin('pc.uploadedImages', 'ui')->addSelect('ui')
             ->distinct()
             ->getQuery()
             ->getResult();
+        return $collections;
     }
     //    /**
     //     * @return PublisherCollection[] Returns an array of PublisherCollection objects

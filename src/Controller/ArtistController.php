@@ -11,6 +11,7 @@ use App\Repository\SkillRepository;
 use App\Service\ArtistManagerService;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 final class ArtistController extends AbstractController
 {

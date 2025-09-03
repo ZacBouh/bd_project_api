@@ -5,7 +5,7 @@ namespace App\DTO\PublisherCollection;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Serializer\Attribute\Ignore;
 use Symfony\Component\Validator\Constraints as Assert;
-use Webmozart\Assert\Assert as AssertAssert;
+
 
 class PublisherCollectionWriteDTO
 {

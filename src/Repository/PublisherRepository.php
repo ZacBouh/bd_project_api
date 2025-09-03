@@ -16,14 +16,22 @@ class PublisherRepository extends ServiceEntityRepository
         parent::__construct($registry, Publisher::class);
     }
 
+    /**
+     * @return array<Publisher>
+     */
     public function findWithAllRelations(int $limit = 200): array
     {
-        return $this->createQueryBuilder('p')
+        /**
+         * @var array<Publisher> $publishers
+         */
+        $publishers =  $this->createQueryBuilder('p')
             ->leftJoin('p.titles', 't')->addSelect('t')
             ->leftJoin('p.uploadedImages', 'uimg')->addSelect('uimg')
             ->leftJoin('p.coverImage', 'cimg')->addSelect('cimg')
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
+
+        return $publishers;
     }
 }

@@ -23,13 +23,18 @@ class SeriesRepository extends ServiceEntityRepository
      */
     public function findAllWithPublisherAndImages(): array
     {
-        return $this->createQueryBuilder('s')
+        /**
+         * @var array<Series> $series
+         */
+        $series = $this->createQueryBuilder('s')
             ->leftJoin('s.publisher', 'p')->addSelect('p')
             ->leftJoin('s.coverImage', 'ci')->addSelect('ci')
             ->leftJoin('s.uploadedImages', 'ui')->addSelect('ui')
             ->distinct()
             ->getQuery()
             ->getResult();
+
+        return $series;
     }
 
     //    /**

@@ -17,6 +17,7 @@ class UploadedImageReadDTO
         public int $id,
         public string $imageName,
         public string $fileName,
+        public string $url,
         public string $createdAt,
         public string $updatedAt,
         public ?int $fileSize,

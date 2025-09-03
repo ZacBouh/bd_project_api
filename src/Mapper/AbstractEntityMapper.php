@@ -2,21 +2,24 @@
 
 namespace App\Mapper;
 
+use App\Entity\Publisher;
 use Doctrine\ORM\EntityManagerInterface;
 use InvalidArgumentException;
-use LogicException;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use ReflectionClass;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
+use App\Entity\Title;
+use Doctrine\ORM\EntityNotFoundException;
+use LogicException;
 
 /**
  * @template TEntity of object
  * @template TDTO of object
  */
-
 abstract class AbstractEntityMapper
 {
     /**
@@ -63,18 +66,61 @@ abstract class AbstractEntityMapper
     abstract protected function getEntityClass(): string;
 
     /**
-     * Should create a new instance oof the target entity in case no entity is provided
+     * Should create a new instance of the target entity in case no entity is provided by the consumer.
      * @return TEntity
      */
     abstract protected function instantiateEntity(): object;
 
     /**
-     * Fields to ignore during normalization and denormalization (DTO keys)
+     * Fields to ignore during denormalization step Array => Entity (DTO keys)
      * @return string[]
      */
-    protected function getIgnoredFields(): array
+    protected function getDenormalizerIgnoredFields(): array
     {
         return ['id'];
+    }
+    /**
+     * Fields to ignore during denormalization step DTO => Array (DTO keys)
+     * @return string[]
+     */
+    protected function getNormalizerIgnoredFields(): array
+    {
+        return ['id', 'coverImageFile', 'uploadedImages'];
+    }
+
+    /**
+     * Callbacks used for the DTO => Array step.
+     * @return array<callable>
+     */
+    protected function getNormalizerCallbacks(): array
+    {
+        return [
+            'titleIds' => function (array $titlesIds) {
+                $titleRefs = [];
+                foreach ($titlesIds as $titleId) {
+                    $ref = $this->em->getReference(Title::class, $titleId);
+                    if (!is_null($ref)) {
+                        $titleRefs[] = $ref;
+                    }
+                }
+                $this->data['titles'] = $titleRefs;
+            },
+            'publisherId' => function (string $publisherId) {
+                $ref = $this->em->getReference(Publisher::class, $publisherId);
+                if (!is_null($ref)) {
+                    $this->data['publisher'] = $ref;
+                }
+            }
+        ];
+    }
+
+    /**
+     * Callbacks used for the Array => Entity step.
+     * @return array<callable>
+     */
+    protected function getDenormalizerCallbacks(): array
+    {
+        return [];
     }
 
     /**
@@ -120,6 +166,7 @@ abstract class AbstractEntityMapper
 
     /**
      * @param TEntity $entity
+     * 
      */
     private function assertEntityOfClass(object $entity, string $class): void
     {
@@ -133,9 +180,12 @@ abstract class AbstractEntityMapper
     }
 
     /**
-     * @param TEntity $entity
+     * Creates or updates an entity based on a dto.
+     * The steps it follows is DTO -> (Normalized) -> Array -> (Denormalization) -> Entity 
+     * @param TEntity|null $entity
      * @param TDTO $dto
      * @param array<mixed> $extra 
+     * @return  TEntity
      */
     public function fromWriteDTO(object $dto, ?object $entity = null, array $extra = []): object
     {
@@ -170,18 +220,18 @@ abstract class AbstractEntityMapper
         $this->entity = $entity;
 
         /** @var array<string, mixed> $normalized */
-        $normalized = $this->normalizer->normalize($dto, 'array');
+        $normalized = $this->normalizer->normalize($dto, 'array', [
+            AbstractObjectNormalizer::CALLBACKS => $this->getNormalizerCallbacks(),
+            AbstractObjectNormalizer::IGNORED_ATTRIBUTES => $this->getNormalizerIgnoredFields(),
+        ]);
         $this->data = $normalized;
-        foreach ($this->getIgnoredFields() as $field) {
+        foreach ($this->getNormalizerIgnoredFields() as $field) {
             $this->logger->warning(sprintf('unsetting field %s', $field));
             unset($this->data[$field]);
         }
 
         /** @var TEntity $entity */
         $entity = $this->denormalizeToEntity($this->data, $entity, $extra);
-        // if ($entity::class !== $this->getEntityClass()) {
-        //     throw new LogicException('The denormalized object is not an instance of ' . $this->getEntityClass());
-        // }
         $entity = $this->afterDenormalization($dto, $entity, $extra);
         $this->entity = $entity;
         return $entity;
@@ -208,7 +258,8 @@ abstract class AbstractEntityMapper
             [
                 AbstractNormalizer::OBJECT_TO_POPULATE => $entity,
                 AbstractNormalizer::ALLOW_EXTRA_ATTRIBUTES => false,
-                AbstractNormalizer::IGNORED_ATTRIBUTES => $this->getIgnoredFields(),
+                AbstractNormalizer::IGNORED_ATTRIBUTES => $this->getDenormalizerIgnoredFields(),
+                AbstractNormalizer::CALLBACKS => $this->getDenormalizerCallbacks(),
             ]
         );
         return $entity;
@@ -226,9 +277,7 @@ abstract class AbstractEntityMapper
         object $entity,
         array $extra = []
     ): object {
-        $this->logger->critical("Afdtrer is called here");
         if (array_key_exists('coverImage', $extra)) {
-            $this->logger->critical("The case is coverImage provided");
             if (method_exists($entity, 'setCoverImage')) {
                 $entity->setCoverImage($extra['coverImage']);
             } else {
@@ -236,5 +285,34 @@ abstract class AbstractEntityMapper
             }
         }
         return $entity;
+    }
+
+    /**
+     * @template TEntityReference of object
+     * @param class-string<TEntityReference> $entityClass
+     * @param int|string $id
+     * @return TEntityReference
+     */
+    public function checkEntityExists(string $entityClass, int|string $id): object
+    {
+        $this->logger->warning(sprintf("Checking existence in db for : %s with id %s", $entityClass, $id));
+        $repo = $this->em->getRepository($entityClass);
+
+        $result =  $repo->createQueryBuilder('e')
+            ->select('1')
+            ->andWhere('e.id = :id')
+            ->setParameter('id', $id)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult() !== null;
+        if (!$result) {
+            throw new EntityNotFoundException('Abstract Mapper : checkEntityExists no ' . $entityClass . ' found for id ' . $id);
+        }
+
+        $ref = $this->em->getReference($entityClass, $id);
+        if (is_null($ref)) {
+            throw new LogicException(sprintf('The %s with id %s exists in the db but the ref from entity manager is null', $entityClass, $id));
+        }
+        return $ref;
     }
 }

@@ -18,11 +18,12 @@ class ArtistRepository extends ServiceEntityRepository
 
 
     /**
-     * @return Artist[]
+     * @return array<Artist>
      */
     public function findWithAllRelations(int $limit = 200): array
     {
-        return $this->createQueryBuilder('a')
+        /** @var array<Artist> $artists */
+        $artists = $this->createQueryBuilder('a')
             ->leftJoin('a.skills', 's')->addSelect('s')
             ->leftJoin('a.titlesContributions', 'tc')->addSelect('tc')
             ->leftJoin('tc.skill', 'skill')->addSelect('skill')
@@ -32,6 +33,7 @@ class ArtistRepository extends ServiceEntityRepository
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
+        return $artists;
     }
     //    /**
     //     * @return Artist[] Returns an array of Artist objects
