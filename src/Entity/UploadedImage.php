@@ -6,6 +6,7 @@ use App\Entity\Trait\TimestampableTrait;
 use App\Repository\UploadedImageRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\ORM\Mapping\HasLifecycleCallbacks;
 use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Serializer\Attribute\Ignore;
@@ -15,6 +16,7 @@ use Vich\UploaderBundle\Mapping\Annotation as Vich;
 /**
  * @phpstan-type UploadedImageDimensions array{0: int, 1: int}
  */
+#[HasLifecycleCallbacks]
 #[ORM\Entity(repositoryClass: UploadedImageRepository::class)]
 #[Vich\Uploadable]
 class UploadedImage
@@ -108,7 +110,7 @@ class UploadedImage
         return $this;
     }
 
-    public function getImageName(): ?string
+    public function getImageName(): string
     {
         return $this->imageName;
     }

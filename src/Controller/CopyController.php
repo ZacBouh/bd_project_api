@@ -4,11 +4,13 @@ namespace App\Controller;
 
 use App\DTO\Copy\CopyDTOBuilder;
 use App\DTO\Copy\CopyReadDTO;
+use App\DTO\Copy\CopyWriteDTO;
 use App\Service\CopyManagerService;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -27,14 +29,15 @@ final class CopyController extends AbstractController
         $this->logger->warning('Received Create Copy Request');
 
         $createdCopy = $this->copyService->createCopy($request->request, $request->files);
-        return $this->json($createdCopy);
+        $dto = $this->copyDTOBuilder->readDTOFromEntity($createdCopy)->buildReadDTO();
+        return $this->json($dto, Response::HTTP_OK);
     }
 
     #[Route('/api/copy', name: 'copy_get', methods: 'GET')]
     public function getCopies(
         Request $request,
     ): JsonResponse {
-        $this->logger->warning('Received Get Copies Request');
+        $this->logger->critical('Received Get Copies Request');
 
         $data = $this->copyService->getCopies();
 
@@ -43,13 +46,13 @@ final class CopyController extends AbstractController
 
     #[Route('/api/copy', name: 'copy_remove', methods: 'DELETE')]
     public function removeCopy(
-        #[MapRequestPayload] CopyReadDTO $copyDTO
+        #[MapRequestPayload] CopyWriteDTO $copyDTO
     ): JsonResponse {
         try {
             $this->copyService->removeCopy($copyDTO);
             return $this->json(['message' => 'Copy successfully removed, id : ' . $copyDTO->id]);
         } catch (\Exception $e) {
-            return $this->json(['message' => 'error' . $e->getMessage(), $e->getCode() ?? 500]);
+            return $this->json(['message' => 'error' . $e->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR]);
         }
     }
 
@@ -57,14 +60,8 @@ final class CopyController extends AbstractController
     public function updateCopy(
         Request $request
     ): JsonResponse {
-        $data = $request->request->all();
-        $copyDTOBuilder = $this->copyDTOBuilder->fromArray($data);
-        $coverImageFile = $request->files->get('coverImageFile');
-        if (!is_null($coverImageFile)) {
-            $copyDTOBuilder->addCoverImage(imageFile: $coverImageFile);
-        }
-        $copyDTO = $copyDTOBuilder->build();
-        $result = $this->copyService->updateCopy($copyDTO);
-        return $this->json($result);
+
+        $updatedCopy = $this->copyService->updateCopy($request->request, $request->files);
+        return $this->json($updatedCopy);
     }
 }

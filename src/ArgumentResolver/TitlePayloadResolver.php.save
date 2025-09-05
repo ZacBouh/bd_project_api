@@ -3,7 +3,10 @@
 namespace App\ArgumentResolver;
 
 use App\Entity\Title;
+use App\Entity\Artist;
+use App\Entity\ArtistTitleContribution;
 use App\Repository\ArtistRepository;
+use App\Repository\ArtistTitleContributionRepository;
 use App\Repository\PublisherRepository;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -13,14 +16,17 @@ use Symfony\Component\Serializer\SerializerInterface;
 class TitlePayloadResolver
 {
     public function __construct(
-        private ArtistRepository $artistRepository,
-        private PublisherRepository $publisherRepository,
+        private ArtistTitleContributionRepository $contributionRepository,
         private LoggerInterface $logger,
         private SerializerInterface $serializer,
     ) {}
 
+    /**
+     * @return iterable<Title>
+     */
     public function resolve(Request $request, ArgumentMetadata $argument): iterable
     {
+        $this->logger->warning('TitlePayloadResolverCalled');
         $argumentType = $argument->getType();
         if (!($argumentType === Title::class)) {
             return [];
@@ -29,10 +35,12 @@ class TitlePayloadResolver
         /** @var Title $title */
         $title = $this->serializer->deserialize($jsonContent, Title::class, 'json', ['ignored_attributes' => ['artists']]);
 
+        /** @var array<string, scalar> $data */
         $data = json_decode($jsonContent, true);
-        $artistsId = $data['artists'] ?? [];
+        $artistsId = $data['artistsContributions'] ?? [];
 
-        $artists = $this->artistRepository->findBy(['id' => $artistsId]);
+        /** @var array<Artist> $artists */
+        $artists = $this->contributionRepository->findBy(['id' => $artistsId]);
         foreach ($artists as $artist) {
             $title->addArtist($artist);
         }

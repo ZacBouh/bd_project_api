@@ -2,8 +2,10 @@
 
 namespace App\Service;
 
+use App\DTO\Artist\ArtistDTOFactory;
 use App\DTO\Artist\ArtistReadDTOBuilder;
 use App\DTO\Artist\ArtistWriteDTO;
+use App\DTO\Artist\ArtistReadDTO;
 use App\Entity\Artist;
 use App\Mapper\ArtistEntityMapper;
 use App\Repository\ArtistRepository;
@@ -20,9 +22,9 @@ class ArtistManagerService
         private EntityManagerInterface $entityManager,
         private ArtistRepository $artistRepository,
         private UploadedImageService $imageService,
-        private ArtistReadDTOBuilder $dtoBuilder,
         private ValidatorInterface $validator,
         private ArtistEntityMapper $artistMapper,
+        private ArtistDTOFactory $dtoFactory
     ) {}
 
     /**
@@ -30,7 +32,7 @@ class ArtistManagerService
      */
     public function createArtist(InputBag $newArtistContent, FileBag $files): Artist
     {
-        $dto = $this->dtoBuilder->writeDTOFromInputBags($newArtistContent, $files)->denormalizeToDTO(ArtistWriteDTO::class);
+        $dto = $this->dtoFactory->writeDtoFromInputBag($newArtistContent, $files);
         $violations = $this->validator->validate($dto);
         if (count($violations) > 0) {
             throw new ValidationFailedException($dto, $violations);
@@ -49,12 +51,16 @@ class ArtistManagerService
 
 
     /**
-     * @return array<Artist>
+     * @return array<ArtistReadDTO>
      */
     public function getAll(): array
     {
         /** @var Array<int, Artist> $artists */
         $artists = $this->artistRepository->findBy([], limit: 200);
-        return $artists;
+        $data = [];
+        foreach ($artists as $artist) {
+            $data[] = $this->dtoFactory->readDtoFromEntity($artist);
+        }
+        return $data;
     }
 }

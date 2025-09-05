@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\DTO\Copy\CopyDTOBuilder;
+use App\DTO\Copy\CopyDTOFactory;
 use App\DTO\Copy\CopyReadDTO;
 use App\DTO\Copy\CopyWriteDTO;
 use App\Entity\Copy;
@@ -20,6 +21,8 @@ use App\Repository\TitleRepository;
 use App\Repository\UserRepository;
 use App\Security\Role;
 use Doctrine\ORM\EntityManagerInterface;
+use InvalidArgumentException;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Exception\ResourceNotFoundException;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
@@ -38,15 +41,18 @@ class CopyManagerService
         private CopyDTOBuilder $dtoBuilder,
         private CopyMapper $copyMapper,
         private ValidatorInterface $validator,
+        private CopyDTOFactory $dtoFactory,
     ) {}
 
     /**
-     * @param InputBag<string> $newCopyData
+     * @param InputBag<scalar> $newCopyData
      */
     public function createCopy(InputBag $newCopyData, FileBag $files): Copy
     {
         /**
          * @var User $user
+         * @throws AccessDeniedException
+         * @throws ValidationFailedException
          */
         $user = $this->security->getUser();
         $userId = $user->getId();
@@ -80,13 +86,17 @@ class CopyManagerService
         $copies = $this->copyRepository->findAllWithRelations();
         $this->logger->info("Retrieved " . count($copies) . " copies");
         foreach ($copies as $copy) {
-            $dto = $this->dtoBuilder->readDTOFromEntity($copy)->buildReadDTO();
+            $dto = $this->dtoFactory->readDtoFromEntity($copy);
             $copyDTOs[] = $dto;
             // $this->logger->warning("built dto " . json_encode($dto));
         }
         return $copyDTOs;
     }
 
+    /**
+     * @throws ResourceNotFoundException
+     * @throws AccessDeniedException
+     */
     public function removeCopy(CopyWriteDTO|string|int $copyDTO): void
     {
         /** @var User $user */
@@ -105,17 +115,24 @@ class CopyManagerService
         return;
     }
 
-    public function updateCopy(CopyWriteDTO $copyDTO): Copy
+    /**
+     * @param InputBag<scalar> $inputBag
+     * @throws InvalidArgumentException
+     * @throws ResourceNotFoundException
+     */
+    public function updateCopy(InputBag $inputBag, FileBag $files): Copy
     {
-        $this->logger->warning("Copy to update DTO: " . json_encode($copyDTO));
-
+        $dto = $this->dtoBuilder->writeDTOFromInputBags($inputBag, $files)->buildWriteDTO();
+        if (is_null($dto->id)) {
+            throw new InvalidArgumentException('Update copy : id is null');
+        }
         /** @var Copy|null $copy */
-        $copy = $this->copyRepository->findOneBy(['id' => $copyDTO->id]);
+        $copy = $this->copyRepository->findOneBy(['id' => $dto->id]);
         if (is_null($copy)) {
-            throw new ResourceNotFoundException("Update Copy : no copy found for id " . $copyDTO->id);
+            throw new ResourceNotFoundException("Update Copy : no copy found for id " . $dto->id);
         }
 
-        $this->copyMapper->fromWriteDTO($copyDTO, $copy);
+        $this->copyMapper->fromWriteDTO($dto, $copy);
         $this->entityManager->persist($copy);
         $this->entityManager->flush();
 

@@ -4,14 +4,14 @@ namespace App\DTO\Artist;
 
 use App\Enum\Skill;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\Serializer\Attribute\Ignore;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
-use Webmozart\Assert\Assert as AssertAssert;
 
 class ArtistWriteDTO
 {
     /**
-     * @param string[] $skills
+     * @param array<string> $skills
      */
     public function __construct(
         #[Assert\All(constraints: [
@@ -26,8 +26,15 @@ class ArtistWriteDTO
             new Assert\Type('string'),
             new Assert\Choice(callback: 'skillChoices')
         ])]
-        public array $skills,
+        #[Assert\Count(
+            min: 1,
+            minMessage: 'You have to select at least one skill'
+        )]
+        public ?array $skills,
+
+        #[Ignore]
         public ?UploadedFile $coverImageFile,
+
         #[Assert\AtLeastOneOf(constraints: [
             new Assert\Date(),
             new Assert\DateTime(),

@@ -5,7 +5,7 @@ namespace App\Entity\Trait;
 use InvalidArgumentException;
 
 /**
- * @phpstan-type NormalizeCallbackDefaultReturn array{'id': int, 'name': string} | array{'id': int, 'name': null} | array{'id': null, 'name': non-empty-string}
+ * @phpstan-type NormalizeCallbackDefaultReturn array{'id': int, 'name': string} | array{'id': int} | array{'id': null, 'name': non-empty-string}
  * @template T of object
  * @mixin T
  */

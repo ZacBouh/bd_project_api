@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\DTO\Artist\ArtistDTOFactory;
 use App\DTO\Artist\ArtistReadDTOBuilder;
 use App\Repository\ArtistRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -20,7 +21,7 @@ final class ArtistController extends AbstractController
         private ArtistManagerService $artistManager,
         private ArtistRepository $artistRepository,
         private LoggerInterface $logger,
-        private ArtistReadDTOBuilder $dtoBuilder,
+        private ArtistDTOFactory $dtoFactory,
     ) {}
 
     #[Route('/api/skills', name: 'artist_skills', methods: 'GET')]
@@ -32,10 +33,9 @@ final class ArtistController extends AbstractController
 
     #[Route('/api/artists', name: 'artist_create', methods: 'POST')]
     public function createArtist(
-        // #[MapRequestPayload(resolver: ArtistPayloadResolver::class)] Artist $newArtist,
         Request $request
     ): JsonResponse {
-        $this->logger->warning("Received Create Artist Request");
+        $this->logger->critical("Received Create Artist Request");
         $newArtist = $this->artistManager->createArtist($request->request, $request->files);
         return $this->json($newArtist);
     }
@@ -43,14 +43,11 @@ final class ArtistController extends AbstractController
     #[Route('/api/artists', name: 'artist_get', methods: 'GET')]
     public function getArtists(): JsonResponse
     {
+        $this->logger->critical("Received Get Artists Request");
         $artistsEntities = $this->artistRepository->findWithAllRelations();
         $data = [];
         foreach ($artistsEntities as $artist) {
-            $builder = $this->dtoBuilder
-                ->fromEntity($artist)
-                ->withCoverImage()
-                ->withUploadedImages();
-            $data[] = $builder->build();
+            $data[] = $this->dtoFactory->readDtoFromEntity($artist);
         }
         return $this->json($data);
     }

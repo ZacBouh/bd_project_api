@@ -16,21 +16,23 @@ use Vich\UploaderBundle\Templating\Helper\UploaderHelper;
 class UploadedImageDTOBuilder extends AbstractDTOBuilder
 {
     public function __construct(
-        protected ContainerInterface $container,
         protected UploaderHelper $uploaderHelper,
     ) {
-        parent::__construct($container);
+        parent::__construct();
     }
 
     public function readDTOFromEntity(object $entity): static
     {
         parent::readDTOFromEntity($entity);
         $this->data['url'] = $this->uploaderHelper->asset($entity, 'file');
+        $this->logger->critical('data content in readDTOFromEntity for UploadedImageDTOBuilder ' . json_encode($this->data));
         return $this;
     }
 
     public function buildReadDTO(): UploadedImageReadDTO
     {
+
+        $this->logger->critical('data content in buildReadDTO for UploadedImageDTOBuilder ' . json_encode($this->data));
         return parent::denormalizeToDTO(UploadedImageReadDTO::class);
     }
 }

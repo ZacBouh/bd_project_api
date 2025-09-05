@@ -18,9 +18,9 @@ class PublisherReadDTO
         public ?UploadedImageReadDTO $coverImage,
         public ?array $uploadedImages,
         public ?array $titles,
-        public ?\DateTime $birthDate,
-        public ?\DateTime $deathDate,
-        public \DateTime $createdAt,
-        public \DateTime $updatedAt,
+        public ?string $birthDate,
+        public ?string $deathDate,
+        public string $createdAt,
+        public string $updatedAt,
     ) {}
 }

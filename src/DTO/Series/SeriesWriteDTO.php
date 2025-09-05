@@ -11,13 +11,13 @@ use Symfony\Component\Validator\Constraints as Assert;
 class SeriesWriteDTO
 {
     /**
-     * @param int[] $titlesId
+     * @param array<mixed> $titles
      */
     public function __construct(
         #[Assert\NotBlank(message: 'Series name cannot be blank')]
         public string $name,
         #[Assert\Positive(message: 'Publisher id must be a positive integer')]
-        public int $publisherId,
+        public int $publisher,
         #[Assert\NotNull(message: 'Series must have a language')]
         public Language $language,
         public ?int $id,
@@ -25,7 +25,7 @@ class SeriesWriteDTO
             new Assert\Type('integer'),
             new Assert\Positive()
         ])]
-        public ?array $titlesId,
+        public ?array $titles,
         public ?OnGoingStatus $onGoingStatus,
         #[Assert\Image(
             maxSize: '10M',

@@ -22,15 +22,15 @@ services:
         tags:
             - {name: kernel.event_listener, event: lexik_jwt_authentication.on_authentication_success, method: onAuthenticationSuccess }
     
-    App\ArgumentResolver\ArtistPayloadResolver:
-        tags: 
-            - {name: controller.argument_value_resolver}
+    # App\ArgumentResolver\ArtistPayloadResolver:
+    #     tags: 
+    #         - {name: controller.argument_value_resolver}
         
-    App\DTO\Builder\DTOBuilder:
-        shared: false
-    App\DTO\Artist\ArtistReadDTOBuilder:
-        shared: false
-    App\DTO\Publisher\PublisherDTOBuilder:
-        shared: false
+    # App\DTO\Builder\DTOBuilder:
+    #     shared: false
+    # App\DTO\Artist\ArtistReadDTOBuilder:
+    #     shared: false
+    # App\DTO\Publisher\PublisherDTOBuilder:
+    #     shared: false
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

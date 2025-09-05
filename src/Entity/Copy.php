@@ -85,7 +85,7 @@ class Copy implements HasUploadedImagesInterface
         return $this;
     }
 
-    public function getCopyCondition(): ?CopyCondition
+    public function getCopyCondition(): CopyCondition
     {
         return $this->copyCondition;
     }

@@ -11,9 +11,8 @@ use App\Entity\Trait\HasDefaultNormalizeCallback;
 class CopyReadDTO
 {
     /**
-     * @param array<UploadedImageReadDTO> $uploadedImages
-     * @param array<NormalizeCallbackDefaultReturn> $owner
-     * @param array<NormalizeCallbackDefaultReturn> $title
+     * @param NormalizeCallbackDefaultReturn $owner
+     * @param NormalizeCallbackDefaultReturn $title
      * @param array<UploadedImageReadDTO> $uploadedImages
      */
     public function __construct(

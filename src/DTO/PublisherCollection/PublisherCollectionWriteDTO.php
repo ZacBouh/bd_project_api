@@ -2,6 +2,7 @@
 
 namespace App\DTO\PublisherCollection;
 
+use App\Enum\Language;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Serializer\Attribute\Ignore;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -10,27 +11,29 @@ use Symfony\Component\Validator\Constraints as Assert;
 class PublisherCollectionWriteDTO
 {
     /**
-     * @param int[] $titleIds 
+     * @param array<mixed> $titles 
      */
     public function __construct(
         #[Assert\NotBlank(message: 'PublisherCollection name cannot be blank')]
         public string $name,
 
         #[Assert\Positive(message: 'Publisher id must be a positive integer')]
-        public int $publisherId,
+        public int $publisher,
+
+        #[Assert\NotBlank(message: 'PublisherCollection language cannot be blank')]
+        #[Assert\Choice(callback: 'languageCodes')]
+        public string $language,
 
         #[Assert\Positive(message: 'PublisherCollection id must be a positive integer')]
         public ?int $id,
-
-        #[Assert\NotBlank(message: 'PublisherCollection name cannot be blank')]
-        public string $language,
 
         #[Assert\All(constraints: [
             new Assert\Type('integer'),
             new Assert\Positive()
         ])]
-        public ?array $titleIds,
+        public ?array $titles,
 
+        #[Assert\NotBlank(allowNull: true)]
         public ?string $description,
 
         #[Assert\AtLeastOneOf(constraints: [
@@ -55,4 +58,12 @@ class PublisherCollectionWriteDTO
         public ?UploadedFile $coverImageFile,
 
     ) {}
+
+    /**
+     * @return string[]
+     */
+    public static function languageCodes()
+    {
+        return Language::getCodesList();
+    }
 }

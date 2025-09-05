@@ -12,8 +12,8 @@ use App\Entity\Trait\HasDefaultNormalizeCallback;
 class ArtistTitleContributionReadDTO
 {
     /**
-     * @param array<NormalizeCallbackDefaultReturn> $artist
-     * @param array<NormalizeCallbackDefaultReturn> $title
+     * @param NormalizeCallbackDefaultReturn $artist
+     * @param NormalizeCallbackDefaultReturn $title
      */
     public function __construct(
         public int $id,

@@ -15,7 +15,6 @@ use Symfony\Component\HttpFoundation\Request;
 final class PublisherController extends AbstractController
 {
     public function __construct(
-        private PublisherRepository $publisherRepository,
         private PublisherManagerService $publisherManagerService,
         private LoggerInterface $logger,
     ) {}
@@ -23,6 +22,7 @@ final class PublisherController extends AbstractController
     #[Route('/api/publishers', name: 'publishers_get', methods: 'GET')]
     public function getPublishers(): JsonResponse
     {
+        $this->logger->critical("Received Get Publishers Request");
         /** @var Array<int, Publisher> $publishers */
         $publishers = $this->publisherManagerService->getPublishers();
         return $this->json($publishers);

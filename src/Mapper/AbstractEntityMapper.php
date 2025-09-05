@@ -15,6 +15,10 @@ use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use App\Entity\Title;
 use Doctrine\ORM\EntityNotFoundException;
 use LogicException;
+use Symfony\Contracts\Service\Attribute\Required;
+use Symfony\Contracts\Service\ServiceMethodsSubscriberTrait;
+use Symfony\Contracts\Service\ServiceSubscriberInterface;
+use Symfony\Contracts\Service\Attribute\SubscribedService;
 
 /**
  * @template TEntity of object
@@ -36,22 +40,34 @@ abstract class AbstractEntityMapper
     protected LoggerInterface $logger;
     protected EntityManagerInterface $em;
 
-    public function __construct(
-        protected ContainerInterface $container,
-        ?NormalizerInterface $norm = null,
-        ?DenormalizerInterface $denorm = null,
-        ?LoggerInterface $log = null,
-        ?EntityManagerInterface $entitymngr = null,
-    ) {
-        /** @var NormalizerInterface $normalizer */
-        $normalizer = $norm ?? $container->get(NormalizerInterface::class);
-        /** @var DenormalizerInterface $denormalizer */
-        $denormalizer = $denorm ?? $container->get(DenormalizerInterface::class);
-        /** @var LoggerInterface $logger */
-        $logger = $log ?? $container->get(LoggerInterface::class);
-        /** @var EntityManagerInterface $em */
-        $em = $entitymngr ?? $container->get(EntityManagerInterface::class);
+    public function __construct() {}
+    // public function __construct(
+    //     ?NormalizerInterface $norm = null,
+    //     ?DenormalizerInterface $denorm = null,
+    //     ?LoggerInterface $log = null,
+    //     ?EntityManagerInterface $entitymngr = null,
+    // ) {
+    //     if (!is_null($norm)) {
+    //         $this->normalizer = $norm;
+    //     }
+    //     if (!is_null($denorm)) {
+    //         $this->denormalizer = $denorm;
+    //     }
+    //     if (!is_null($log)) {
+    //         $this->logger = $log;
+    //     }
+    //     if (!is_null($entitymngr)) {
+    //         $this->em = $entitymngr;
+    //     }
+    // }
 
+    #[Required]
+    public function setDependencies(
+        NormalizerInterface $normalizer,
+        DenormalizerInterface $denormalizer,
+        LoggerInterface $logger,
+        EntityManagerInterface $em,
+    ): void {
         $this->normalizer = $normalizer;
         $this->denormalizer = $denormalizer;
         $this->logger = $logger;
@@ -85,7 +101,7 @@ abstract class AbstractEntityMapper
      */
     protected function getNormalizerIgnoredFields(): array
     {
-        return ['id', 'coverImageFile', 'uploadedImages'];
+        return ['id', 'coverImageFile', 'uploadedImages',];
     }
 
     /**

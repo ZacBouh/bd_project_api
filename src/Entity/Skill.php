@@ -12,7 +12,7 @@ class Skill
     #[ORM\Column(length: 255)]
     private string $name;
 
-    public function getName(): ?string
+    public function getName(): string
     {
         return $this->name;
     }

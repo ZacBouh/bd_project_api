@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\DTO\Publisher\PublisherDTOBuilder;
+use App\DTO\Publisher\PublisherDTOFactory;
 use App\DTO\Publisher\PublisherWriteDTO;
 use App\DTO\Publisher\PublisherReadDTO;
 use App\Repository\PublisherRepository;
@@ -20,17 +21,17 @@ class PublisherManagerService
         private EntityManagerInterface $entityManager,
         private PublisherRepository $publisherRepository,
         private UploadedImageService $imageService,
-        private PublisherDTOBuilder $dtoBuilder,
         private ValidatorInterface $validator,
         private PublisherEntityMapper $publisherMapper,
+        private PublisherDTOFactory $dtoFactory,
     ) {}
 
     /**
-     * @param InputBag<string> $newPublisherContent
+     * @param InputBag<scalar> $newPublisherContent
      */
     public function createPublisher(InputBag $newPublisherContent, FileBag $files): Publisher
     {
-        $dto = $this->dtoBuilder->writeDTOFromInputBags($newPublisherContent, $files)->denormalizeToDTO(PublisherWriteDTO::class);
+        $dto = $this->dtoFactory->writeDtoFromInputBag($newPublisherContent, $files);
         $violations = $this->validator->validate($dto);
         if (count($violations) > 0) {
             throw new ValidationFailedException($dto, $violations);
@@ -53,8 +54,7 @@ class PublisherManagerService
         $data = [];
         $publishers = $this->publisherRepository->findWithAllRelations();
         foreach ($publishers as $publisher) {
-            // $data[] = $this->dtoFactory->createFromEntity($publisher);
-            $data[] = $this->dtoBuilder->readDTOFromEntity($publisher)->denormalizeToDTO(PublisherReadDTO::class);
+            $data[] = $this->dtoFactory->readDtoFromEntity($publisher);
         }
         return $data;
     }

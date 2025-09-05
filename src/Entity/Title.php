@@ -13,6 +13,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Doctrine\DBAL\Types\Types;
 use InvalidArgumentException;
 use Symfony\Component\Serializer\Annotation\Groups;
+use App\Entity\ArtistTitleContribution;
 
 #[ORM\Entity(repositoryClass: TitleRepository::class)]
 class Title implements HasUploadedImagesInterface

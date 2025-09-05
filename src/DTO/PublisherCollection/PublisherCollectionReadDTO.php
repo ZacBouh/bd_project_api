@@ -3,12 +3,16 @@
 namespace App\DTO\PublisherCollection;
 
 use App\DTO\UploadedImage\UploadedImageReadDTO;
+use App\Entity\Trait\HasDefaultNormalizeCallback;
 
+/**
+ * @phpstan-import-type NormalizeCallbackDefaultReturn from HasDefaultNormalizeCallback
+ */
 class PublisherCollectionReadDTO
 {
     /**
-     * @param array{'id':int, 'name':string} $titles
-     * @param array{'id':int, 'name':string} $publisher
+     * @param array<NormalizeCallbackDefaultReturn> $titles
+     * @param NormalizeCallbackDefaultReturn $publisher
      */
     public function __construct(
         public int $id,

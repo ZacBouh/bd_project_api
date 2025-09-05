@@ -10,13 +10,22 @@ class PublisherWriteDTO
 {
     /**
      * @param UploadedFile[] $uploadedImages
-     * @param int[] $titles
+     * @param mixed[] $titles
      */
     public function __construct(
+        public string $name,
+
         #[Assert\Positive(message: 'PublisherCollection id must be a positive integer')]
         public ?int $id,
-        public string $name,
+
+
+        #[Assert\NotBlank(allowNull: true)]
         public ?string $description,
+
+        #[Assert\All(constraints: [
+            new Assert\Type('integer'),
+            new Assert\Positive()
+        ])]
         public ?array $titles,
 
         #[Assert\AtLeastOneOf(constraints: [
@@ -38,6 +47,13 @@ class PublisherWriteDTO
         )]
         #[Ignore]
         public ?UploadedFile $coverImageFile,
+        #[Assert\All(constraints: [
+            new Assert\Image(
+                maxSize: '10M',
+                mimeTypes: ['image/*'],
+                mimeTypesMessage: 'Please upload an image less than 10M in a valid image format'
+            )
+        ])]
         public ?array $uploadedImages,
     ) {}
 }

@@ -19,13 +19,18 @@ class ArtistPayloadResolver implements ValueResolverInterface
         private LoggerInterface $logger
     ) {}
 
+    /**
+     * @return iterable<Artist>
+     */
     public function resolve(Request $request, ArgumentMetadata $argument): iterable
     {
+        $this->logger->warning("ArtistPayloadResolver Called");
         $argumentType = $argument->getType();
         if (!($argumentType === Artist::class)) {
             return [];
         }
 
+        /** @var array<string, scalar> */
         $data = json_decode($request->getContent(), true);
         $skillNames = $data['skills'] ?? [];
         unset($data['skills']);

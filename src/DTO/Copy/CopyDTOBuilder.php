@@ -20,6 +20,7 @@ class CopyDTOBuilder extends AbstractDTOBuilder
         return parent::denormalizeToDTO(CopyReadDTO::class);
     }
 
+
     public function buildWriteDTO(): CopyWriteDTO
     {
         return parent::denormalizeToDTO(CopyWriteDTO::class);

@@ -85,7 +85,7 @@ class Publisher implements HasUploadedImagesInterface
         return $this->country;
     }
 
-    public function getName(): ?string
+    public function getName(): string
     {
         return $this->name;
     }
@@ -124,18 +124,6 @@ class Publisher implements HasUploadedImagesInterface
     public function setDeathDate(?\DateTime $deathDate): static
     {
         $this->deathDate = $deathDate;
-
-        return $this;
-    }
-
-    public function getCreatedAt(): ?\DateTimeImmutable
-    {
-        return $this->createdAt;
-    }
-
-    public function setCreatedAt(\DateTimeImmutable $createdAt): static
-    {
-        $this->createdAt = $createdAt;
 
         return $this;
     }

@@ -4,9 +4,6 @@ namespace App\DTO\Publisher;
 
 use App\DTO\Builder\AbstractDTOBuilder;
 use App\Entity\Publisher;
-use Psr\Log\LoggerInterface;
-use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
-use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 
 /**
@@ -29,5 +26,12 @@ class PublisherDTOBuilder extends AbstractDTOBuilder
     public function build(string $dtoClass = PublisherReadDTO::class): object
     {
         return parent::denormalizeToDTO($dtoClass);
+    }
+
+    protected function getNormalizerIgnoredAttributes(): array
+    {
+        return [
+            'titles'
+        ];
     }
 }
