@@ -3,13 +3,13 @@
 namespace App\Service;
 
 use App\DTO\Artist\ArtistDTOFactory;
-use App\DTO\Artist\ArtistReadDTOBuilder;
-use App\DTO\Artist\ArtistWriteDTO;
 use App\DTO\Artist\ArtistReadDTO;
 use App\Entity\Artist;
 use App\Mapper\ArtistEntityMapper;
 use App\Repository\ArtistRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use InvalidArgumentException;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\FileBag;
 use Symfony\Component\HttpFoundation\InputBag;
 use Symfony\Component\Validator\Exception\ValidationFailedException;
@@ -24,7 +24,8 @@ class ArtistManagerService
         private UploadedImageService $imageService,
         private ValidatorInterface $validator,
         private ArtistEntityMapper $artistMapper,
-        private ArtistDTOFactory $dtoFactory
+        private ArtistDTOFactory $dtoFactory,
+        private LoggerInterface $logger,
     ) {}
 
     /**
@@ -62,5 +63,28 @@ class ArtistManagerService
             $data[] = $this->dtoFactory->readDtoFromEntity($artist);
         }
         return $data;
+    }
+
+    /**
+     * @return array<ArtistReadDTO>
+     */
+    public function searchArtist(string $query, int $limit = 200, int $offset = 200): array
+    {
+        $this->logger->debug("Searching for artists with query : $query");
+
+        $queryWords = preg_split('/\s+/', trim($query));
+        if ($queryWords === false) {
+            throw new InvalidArgumentException('The query does not contain any valid word');
+        }
+        $queryWords = array_filter($queryWords);
+        $query =  implode(' ', array_map(fn($word) => "+$word*", $queryWords));
+
+        $artists = $this->artistRepository->searchArtist($query, $limit, $offset);
+        /**@var array<ArtistReadDTO> $dtos */
+        $dtos = [];
+        foreach ($artists as $artist) {
+            $dtos[] = $this->dtoFactory->readDtoFromEntity($artist);
+        }
+        return $dtos;
     }
 }

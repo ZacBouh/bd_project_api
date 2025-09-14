@@ -3,7 +3,7 @@
 namespace App\Controller;
 
 use App\DTO\Artist\ArtistDTOFactory;
-use App\DTO\Artist\ArtistReadDTOBuilder;
+use App\DTO\Artist\ArtistReadDTO;
 use App\Repository\ArtistRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -12,7 +12,6 @@ use App\Repository\SkillRepository;
 use App\Service\ArtistManagerService;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 
 final class ArtistController extends AbstractController
 {
@@ -50,5 +49,17 @@ final class ArtistController extends AbstractController
             $data[] = $this->dtoFactory->readDtoFromEntity($artist);
         }
         return $this->json($data);
+    }
+
+    #[Route('/api/artists/search', name: 'artist_search', methods: 'GET')]
+    public function searchArtist(
+        Request $request,
+    ): JsonResponse {
+        $query = $request->query->getString('q');
+        $limit = $request->query->getInt('limit');
+        $offset = $request->query->getInt('offset');
+
+        $artistsDtos = $this->artistManager->searchArtist($query, $limit, $offset);
+        return $this->json($artistsDtos);
     }
 }
