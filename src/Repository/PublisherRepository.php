@@ -34,4 +34,23 @@ class PublisherRepository extends ServiceEntityRepository
 
         return $publishers;
     }
+
+    /**
+     * @return array<Publisher>
+     */
+    public function searchPublisher(string $query, int $limit, int $offset): array
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->addSelect('MATCH(p.name) AGAINST(:q IN BOOLEAN MODE) AS HIDDEN score')
+            ->having('score > 0')
+            ->setParameter('q', $query)
+            ->orderBy('score', 'DESC')
+            ->setFirstResult($offset)
+            ->setMaxResults($limit);
+
+        /** @var array<Publisher> $publishers */
+        $publishers = $qb->getQuery()->getResult();
+
+        return $publishers;
+    }
 }

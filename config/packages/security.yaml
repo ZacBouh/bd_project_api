@@ -30,6 +30,9 @@ security:
             pattern: ^/api
             stateless: true
             jwt: ~
+            access_token:
+                token_handler: App\Security\ApiTokenHandler
+                token_extractors: App\Security\ApiTokenExtractor
             # activate different ways to authenticate
             # https://symfony.com/doc/current/security.html#the-firewall
 

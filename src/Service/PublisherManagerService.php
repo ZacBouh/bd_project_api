@@ -10,6 +10,8 @@ use App\Repository\PublisherRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Entity\Publisher;
 use App\Mapper\PublisherEntityMapper;
+use InvalidArgumentException;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\FileBag;
 use Symfony\Component\HttpFoundation\InputBag;
 use Symfony\Component\Validator\Exception\ValidationFailedException;
@@ -24,6 +26,7 @@ class PublisherManagerService
         private ValidatorInterface $validator,
         private PublisherEntityMapper $publisherMapper,
         private PublisherDTOFactory $dtoFactory,
+        private LoggerInterface $logger,
     ) {}
 
     /**
@@ -57,5 +60,27 @@ class PublisherManagerService
             $data[] = $this->dtoFactory->readDtoFromEntity($publisher);
         }
         return $data;
+    }
+
+    /**
+     * @return Publisher[]
+     */
+    public function searchPublisher(string $query, int $limit = 200, int $offset = 0): array
+    {
+        if (trim($query, " \n\r\t\v\0") === '') {
+            throw new InvalidArgumentException('The query string is empty');
+        }
+        $queryWords = preg_split('/\s+/', trim($query));
+        if ($queryWords === false) {
+            throw new InvalidArgumentException('The query does not contain valid words');
+        }
+        $queryWords = array_map(fn($word) => "$word*", $queryWords);
+        $query = implode($queryWords);
+        $this->logger->debug("Searching Publishers with query $query");
+        $publishers = $this->publisherRepository->searchPublisher($query, $limit, $offset);
+
+        $this->logger->debug(sprintf("Found %s publisher", count($publishers)));
+
+        return $publishers;
     }
 }

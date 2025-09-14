@@ -43,7 +43,6 @@ class ArtistRepository extends ServiceEntityRepository
     {
         $qb = $this->createQueryBuilder('a')
             ->addSelect("MATCH (a.firstName, a.lastName, a.pseudo) AGAINST (:q IN BOOLEAN MODE) AS HIDDEN score")
-            // ->andWhere("MATCH (a.first_name, a.last_name, a.pseudo) AGAINST (:q IN BOOLEAN MODE) > 0")
             ->having('score > 0')
             ->setParameter("q", $query)
             ->orderBy('score', 'DESC')
@@ -54,6 +53,7 @@ class ArtistRepository extends ServiceEntityRepository
         $artists = $qb->getQuery()->getResult();
         return $artists;
     }
+
     //    /**
     //     * @return Artist[] Returns an array of Artist objects
     //     */

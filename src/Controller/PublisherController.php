@@ -17,6 +17,7 @@ final class PublisherController extends AbstractController
     public function __construct(
         private PublisherManagerService $publisherManagerService,
         private LoggerInterface $logger,
+        private PublisherDTOFactory $dtoFactory,
     ) {}
 
     #[Route('/api/publishers', name: 'publishers_get', methods: 'GET')]
@@ -35,5 +36,17 @@ final class PublisherController extends AbstractController
         $this->logger->warning("Received Create Publisher Request");
         $newPublisher = $this->publisherManagerService->createPublisher($request->request, $request->files);
         return $this->json($newPublisher);
+    }
+
+    #[Route('/api/publishers/search', name: 'publishers_search', methods: 'GET')]
+    public function searchPublisher(
+        Request $request,
+    ): JsonResponse {
+        $query = $request->query->getString('q');
+        $limit = $request->query->getInt('limit');
+        $offset = $request->query->getInt('offset');
+        $publishers = $this->publisherManagerService->searchPublisher($query, $limit, $offset);
+        $dtos = array_map(fn($publisher) => $this->dtoFactory->readDtoFromEntity($publisher), $publishers);
+        return $this->json($dtos);
     }
 }

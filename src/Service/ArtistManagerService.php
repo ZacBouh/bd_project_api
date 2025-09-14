@@ -72,6 +72,9 @@ class ArtistManagerService
     {
         $this->logger->debug("Searching for artists with query : $query");
 
+        if (trim($query, " \n\r\t\v\0") == "") {
+            throw new InvalidArgumentException("Cannot search title with an empty string as query");
+        }
         $queryWords = preg_split('/\s+/', trim($query));
         if ($queryWords === false) {
             throw new InvalidArgumentException('The query does not contain any valid word');
