@@ -36,4 +36,23 @@ class TitleRepository extends ServiceEntityRepository
         $titles = $qb->getQuery()->getResult();
         return $titles;
     }
+
+    /**
+     * @return array<Title>
+     */
+    public function searchTitle(string $query, int $limit = 200, int $offset = 0): array
+    {
+
+        $qb = $this->createQueryBuilder('t')
+            ->addSelect("MATCH (t.name) AGAINST (:q IN BOOLEAN MODE) AS HIDDEN score")
+            ->andWhere("MATCH (t.name) AGAINST (:q IN BOOLEAN MODE) > 0")
+            ->setParameter("q", $query)
+            ->orderBy('score', 'DESC')
+            ->setFirstResult($offset)
+            ->setMaxResults($limit);
+
+        /** @var array<Title> */
+        $titles = $qb->getQuery()->getResult();
+        return $titles;
+    }
 }

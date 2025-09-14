@@ -28,6 +28,7 @@ class TitleManagerService
         private ValidatorInterface $validator,
         private TitleEntityMapper $titleMapper,
         private TitleDTOFactory $dtoFactory,
+        private LoggerInterface $logger
     ) {}
 
     /**
@@ -81,6 +82,32 @@ class TitleManagerService
         foreach ($entities as $title) {
             $titles[] = $this->dtoFactory->readDTOFromEntity($title);
         }
+        return $titles;
+    }
+
+
+    /**
+     * @return array<TitleReadDTO>
+     */
+    public function searchTitle(string $query, int $limit = 200, int $offset = 0): array
+    {
+        $this->logger->debug(sprintf("Searching titles with query $query"));
+        if (trim($query, " \n\r\t\v\0") == "") {
+            throw new InvalidArgumentException("Cannot search title with an empty string as query");
+        }
+        $queryWords = preg_split('/\s+/', trim($query));
+        if ($queryWords === false) {
+            throw new InvalidArgumentException('The query does not contain any valid word');
+        }
+        $queryWords = array_filter($queryWords); // to drop empty values
+        $query = implode(' ', array_map(fn($word) => "+$word*", $queryWords));
+
+        $result = $this->titleRepository->searchTitle($query, $limit, $offset);
+        $titles = [];
+        foreach ($result as $title) {
+            $titles[] = $this->dtoFactory->readDTOFromEntity($title);
+        }
+        $this->logger->debug(sprintf("Found %s title with search", count($result)));
         return $titles;
     }
 }

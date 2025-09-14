@@ -2,7 +2,6 @@
 
 namespace App\Controller;
 
-use App\DTO\Title\TitleDTOBuilder;
 use App\DTO\Title\TitleDTOFactory;
 use App\Entity\Title;
 use App\Service\TitleManagerService;
@@ -33,12 +32,23 @@ final class TitleController extends AbstractController
         return $this->json($dto, Response::HTTP_OK);
     }
 
-    #[Route('/api/titles', name: 'title_get')]
+    #[Route('/api/titles', name: 'title_get', methods: 'GET')]
     public function getTitles(): JsonResponse
     {
         $this->logger->critical("Received Get Titles Request");
         /** @var Array<int, Title> $titles */
         $titles = $this->titleManagerService->getTitles();
         return $this->json($titles);
+    }
+
+    #[Route('/api/titles/search', name: 'title_search', methods: 'GET')]
+    public function searchTitle(
+        Request $request,
+    ): JsonResponse {
+        $query = $request->query->getString('q');
+        $limit = $request->query->getInt('limit', 200);
+        $offset = $request->query->getInt('offset', 0);
+        $result = $this->titleManagerService->searchTitle($query, $limit, $offset);
+        return $this->json($result);
     }
 }

@@ -33,7 +33,7 @@ enum Language: string
     }
 
     /**
-     * @return string[]
+     * @return non-empty-string[]
      */
     public static function getCodesList(): array
     {

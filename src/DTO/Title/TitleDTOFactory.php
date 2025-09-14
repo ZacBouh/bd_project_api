@@ -92,7 +92,7 @@ class TitleDTOFactory extends AbstractDTOFactory
             $publisher,
             $language,
             $title->getDescription(),
-            [],
+            $artistsContributions,
             $coverImage,
             $title->getReleaseDate()?->format('Y-m-d'),
             [],

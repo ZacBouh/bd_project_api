@@ -14,7 +14,7 @@ class TitleReadDTO
     /**
      * @param NormalizeCallbackDefaultReturn $publisher
      * @param array<UploadedImageReadDTO> $uploadedImages
-     * @param array<ArtistTitleContributionReadDTO> $artistsContributions
+     * @param array<mixed> $artistsContributions
      */
     public function __construct(
         public int $id,

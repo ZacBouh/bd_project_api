@@ -13,4 +13,12 @@ enum PriceCurrency: string
     {
         return self::LABELS[$this->value];
     }
+
+    /**
+     * @return non-empty-string[]
+     */
+    public function values(): array
+    {
+        return array_map(fn($case) => $case->value, self::cases());
+    }
 }

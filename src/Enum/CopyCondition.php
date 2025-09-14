@@ -26,4 +26,12 @@ enum CopyCondition: string
     {
         return self::LABELS[$this->value] ?? $this->value;
     }
+
+    /**
+     * @return non-empty-string[]
+     */
+    public function values(): array
+    {
+        return array_map(fn($case) => $case->value, self::cases());
+    }
 }
