@@ -14,7 +14,7 @@ final class Version20250914005022 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return '';
+        return 'Adds FULLTEX INDEX to `artist` table';
     }
 
     public function up(Schema $schema): void

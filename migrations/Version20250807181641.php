@@ -14,7 +14,7 @@ final class Version20250807181641 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return '';
+        return 'Creates `copy` table and `copy_uploaded_image` relation table in consequence';
     }
 
     public function up(Schema $schema): void

@@ -100,7 +100,7 @@ class TitleManagerService
             throw new InvalidArgumentException('The query does not contain any valid word');
         }
         $queryWords = array_filter($queryWords); // to drop empty values
-        $query = implode(' ', array_map(fn($word) => "+$word*", $queryWords));
+        $query = implode(' ', array_map(fn($word) => "$word*", $queryWords));
 
         $result = $this->titleRepository->searchTitle($query, $limit, $offset);
         $titles = [];
@@ -109,5 +109,13 @@ class TitleManagerService
         }
         $this->logger->debug(sprintf("Found %s title with search", count($result)));
         return $titles;
+    }
+
+    /** @param string[] $titleId
+     * @return Title[]
+     */
+    public function findTitles(array $titleId): array
+    {
+        return $this->titleRepository->findBy(['id' => $titleId]);
     }
 }

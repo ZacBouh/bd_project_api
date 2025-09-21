@@ -20,7 +20,7 @@ final class TitleController extends AbstractController
         private LoggerInterface $logger,
     ) {}
 
-    #[Route('/api/titles', name: 'title_create', methods: 'POST')]
+    #[Route('/api/titles', name: 'titles_create', methods: 'POST')]
     public function createTitle(
         Request $request
     ): JsonResponse {
@@ -32,7 +32,7 @@ final class TitleController extends AbstractController
         return $this->json($dto, Response::HTTP_OK);
     }
 
-    #[Route('/api/titles', name: 'title_get', methods: 'GET')]
+    #[Route('/api/titles', name: 'titles_get', methods: 'GET')]
     public function getTitles(): JsonResponse
     {
         $this->logger->critical("Received Get Titles Request");
@@ -50,5 +50,24 @@ final class TitleController extends AbstractController
         $offset = $request->query->getInt('offset', 0);
         $result = $this->titleManagerService->searchTitle($query, $limit, $offset);
         return $this->json($result);
+    }
+
+    #[Route('/api/title', name: 'title_get', methods: 'POST')]
+    public function getTitle(
+        Request $request
+    ): JsonResponse {
+        /** @var array<string, mixed> $data  */
+        $data = json_decode($request->getContent(), true);
+        /** @var string[] $titleIds */
+        $titleIds = $data['titleIds'] ?? [];
+        if (count($titleIds) === 0) {
+            return $this->json(["error" => "No titleId array provided"], Response::HTTP_BAD_REQUEST);
+        }
+        $titles = $this->titleManagerService->findTitles($titleIds);
+        $dto = [];
+        foreach ($titles as $title) {
+            $dto[] = $this->dtoFactory->readDTOFromEntity($title);
+        }
+        return $this->json($dto);
     }
 }

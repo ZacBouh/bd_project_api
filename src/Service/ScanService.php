@@ -9,8 +9,10 @@ use Symfony\Component\HttpFoundation\FileBag;
 use Symfony\Component\HttpFoundation\InputBag;
 use Symfony\Component\Mime\Part\DataPart;
 use Symfony\Component\Mime\Part\Multipart\FormDataPart;
+use Symfony\Component\Validator\Exception\ValidationFailedException;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Component\HttpFoundation\File\File;
 
 class ScanService
 {
@@ -24,29 +26,33 @@ class ScanService
 
     /**
      * @param InputBag<scalar> $inputBag
-     * @return array<mixed>
+     * @return string JSON encoded string
      */
-    public function scanComicPicture(InputBag $inputBag, FileBag $files): array
+    public function scanComicPicture(InputBag $inputBag, FileBag $files): string
     {
-        if ($files->count() === 0) {
-            $message = 'Missing Picture to scan';
-            throw new InvalidArgumentException($message);
-        }
-        if ($files->count() > 1) {
-            $message = 'Cannot scan more than one picture';
-            throw new InvalidArgumentException($message);
-        }
-        // $fileKey = $files->keys()[0];
-        // $inputs = $inputBag->all();
         $writeDto = $this->dtofactory->writeDtoFromInputBag($inputBag, $files);
-        $imageFile = $writeDto->imageFile;
-        $bookPart = $writeDto->bookPart->value;
-        $bookPartLabel = $writeDto->bookPartLabel;
-        $this->logger->debug(sprintf('Scan Request input: %s %s %s', $bookPartLabel, $bookPart, $imageFile->getPath()));
+        $violations = $this->validator->validate($writeDto);
+        if (count($violations) > 0) {
+            throw new ValidationFailedException($writeDto, $violations);
+        }
+        $bookPart = 'empty';
+        $imageFile = null;
+        if ($writeDto->BACK_COVER) {
+            $bookPart = 'BACK_COVER';
+            $imageFile = $writeDto->BACK_COVER;
+        } elseif ($writeDto->FRONT_COVER) {
+            $bookPart = 'FRONT_COVER';
+            $imageFile = $writeDto->FRONT_COVER;
+        } else {
+            $bookPart = 'SPINE';
+            $imageFile = $writeDto->SPINE;
+        }
+        /** @var File $imageFile */
+        $this->logger->debug(sprintf('Scan Request input: %s %s', $bookPart, $imageFile->getPath()));
 
         $scanRequestBody = [];
-        $scanRequestBody['bookPart'] = $writeDto->bookPart->value;
-        $scanRequestBody['bookPartLabel'] = $writeDto->bookPartLabel;
+        $scanRequestBody['bookPart'] = $bookPart;
+        $scanRequestBody['bookPartLabel'] = $bookPart;
         $scanRequestBody['file'] = new DataPart(
             $imageFile->getContent(),
             $imageFile->getFilename(),
@@ -63,8 +69,8 @@ class ScanService
                 'body' => $formData->bodyToIterable()
             ]
         );
-        $content = $aiScanResponse->toArray();
-        $this->logger->debug('Info received Ai Scan Response' . json_encode($content));
-        return ['response' => $content];
+        $content = $aiScanResponse->getContent();
+        $this->logger->debug("Info received Ai Scan Response $content");
+        return $content;
     }
 }

@@ -14,7 +14,7 @@ final class Version20250914120114 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return '';
+        return 'Adds FULLTEXT INDEX to `publisher` table';
     }
 
     public function up(Schema $schema): void

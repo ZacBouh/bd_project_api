@@ -14,7 +14,7 @@ final class Version20250823170728 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return '';
+        return 'Alters `uploaded_image` table to change `image_dimensions` to JSON';
     }
 
     public function up(Schema $schema): void

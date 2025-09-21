@@ -14,7 +14,7 @@ final class Version20250824112149 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return '';
+        return 'Creates `series` table and alters `title` table in consequence';
     }
 
     public function up(Schema $schema): void

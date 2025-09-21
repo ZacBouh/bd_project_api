@@ -29,19 +29,10 @@ class ScanDTOFactory extends AbstractDTOFactory
         if (is_null($files)) {
             throw new InvalidArgumentException('File is missing');
         }
-        $bookPart = $inputBag->getEnum('value', BookScanPart::class);
-        if (is_null($bookPart)) {
-            throw new InvalidArgumentException('Book part information missing');
-        }
-        $imageFile = $files->get($bookPart->value);
-        if (!($imageFile instanceof UploadedFile)) {
-            throw new InvalidArgumentException('File is not an instance of UploadedFile');
-        }
-
         $dto = new ScanWriteDTO(
-            $bookPart,
-            $inputBag->getString('label'),
-            $imageFile,
+            $files->get('FRONT_COVER'), //@phpstan-ignore-line
+            $files->get('BACK_COVER'), //@phpstan-ignore-line
+            $files->get('SPINE'), //@phpstan-ignore-line
             $inputBag->getInt('user'),
             $inputBag->getInt('id')
         );

@@ -14,7 +14,7 @@ final class Version20250823170141 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return '';
+        return 'Alters `copy` table to add constraints on `owner_id` and `title_id`';
     }
 
     public function up(Schema $schema): void
