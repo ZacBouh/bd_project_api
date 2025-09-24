@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\DTO\Copy\CopyDTOBuilder;
+use App\DTO\Copy\CopyDTOFactory;
 use App\DTO\Copy\CopyReadDTO;
 use App\DTO\Copy\CopyWriteDTO;
 use App\Service\CopyManagerService;
@@ -19,7 +20,7 @@ final class CopyController extends AbstractController
     public function __construct(
         private LoggerInterface $logger,
         private CopyManagerService $copyService,
-        private CopyDTOBuilder $copyDTOBuilder,
+        private CopyDTOFactory $dtoFactory,
     ) {}
 
     #[Route('/api/copy', name: 'copy_create', methods: 'POST')]
@@ -29,7 +30,7 @@ final class CopyController extends AbstractController
         $this->logger->warning('Received Create Copy Request');
 
         $createdCopy = $this->copyService->createCopy($request->request, $request->files);
-        $dto = $this->copyDTOBuilder->readDTOFromEntity($createdCopy)->buildReadDTO();
+        $dto = $this->dtoFactory->readDTOFromEntity($createdCopy);
         return $this->json($dto, Response::HTTP_OK);
     }
 

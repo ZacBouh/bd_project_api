@@ -231,6 +231,7 @@ abstract class AbstractEntityMapper
             }
         } else {
             $entity = $this->instantiateEntity();
+            $this->logger->debug('Created new Copy instance');
         }
         /** @var TEntity $entity */
         $this->entity = $entity;
@@ -241,6 +242,7 @@ abstract class AbstractEntityMapper
             AbstractObjectNormalizer::IGNORED_ATTRIBUTES => $this->getNormalizerIgnoredFields(),
         ]);
         $this->data = $normalized;
+        $this->logger->debug('Normalized WriteDTO');
         foreach ($this->getNormalizerIgnoredFields() as $field) {
             $this->logger->warning(sprintf('unsetting field %s', $field));
             unset($this->data[$field]);
@@ -273,7 +275,7 @@ abstract class AbstractEntityMapper
             'array',
             [
                 AbstractNormalizer::OBJECT_TO_POPULATE => $entity,
-                AbstractNormalizer::ALLOW_EXTRA_ATTRIBUTES => false,
+                AbstractNormalizer::ALLOW_EXTRA_ATTRIBUTES => true,
                 AbstractNormalizer::IGNORED_ATTRIBUTES => $this->getDenormalizerIgnoredFields(),
                 AbstractNormalizer::CALLBACKS => $this->getDenormalizerCallbacks(),
             ]

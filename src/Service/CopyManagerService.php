@@ -61,14 +61,17 @@ class CopyManagerService
             $message = "User with id $userId cannot create a copy for user with id $newCopyOwnerId";
             throw new AccessDeniedException($message);
         }
-        $dto = $this->dtoBuilder->writeDTOFromInputBags($newCopyData, $files)->buildWriteDTO();
+        $dto = $this->dtoFactory->writeDTOFromInputBag($newCopyData, $files);
         $violation = $this->validator->validate($dto);
         if (count($violation) > 0) {
             throw new ValidationFailedException($dto, $violation);
         }
+        $this->logger->debug('validated Copy Write DTO');
         $coverImage = null;
         if (!is_null($dto->coverImageFile)) {
+            $this->logger->debug('CopyWriteDTO has a cover image file');
             $coverImage = $this->imageService->saveUploadedImage($dto->coverImageFile, 'Copy Cover');
+            $this->logger->debug(sprintf('Saved CopyWriteDTO cover image at id : %s', $coverImage->getId()));
         }
         $entity = $this->copyMapper->fromWriteDTO($dto, extra: ['coverImage' => $coverImage]);
         $this->entityManager->persist($entity);
