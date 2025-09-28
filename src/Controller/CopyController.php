@@ -2,9 +2,7 @@
 
 namespace App\Controller;
 
-use App\DTO\Copy\CopyDTOBuilder;
 use App\DTO\Copy\CopyDTOFactory;
-use App\DTO\Copy\CopyReadDTO;
 use App\DTO\Copy\CopyWriteDTO;
 use App\Service\CopyManagerService;
 use Psr\Log\LoggerInterface;

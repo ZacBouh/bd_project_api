@@ -26,30 +26,28 @@ class Title implements HasUploadedImagesInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['title:read'])]
     private ?int $id = null;
 
-    #[Groups(['title:read'])]
     #[ORM\Column(length: 255)]
     private string $name;
 
     #[ORM\ManyToOne(inversedBy: 'titles')]
     private ?Publisher $publisher = null;
 
-    #[Groups(['title:read'])]
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     private ?\DateTime  $releaseDate = null;
 
-    #[Groups(['title:read'])]
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(type: 'text', nullable: true)]
     private ?string $description = null;
+
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $isbn = null;
 
     /**
      * @var Collection<int, ArtistTitleContribution>
      */
     #[ORM\OneToMany(targetEntity: ArtistTitleContribution::class, mappedBy: 'title', orphanRemoval: true, cascade: ['remove'])]
     private Collection $artistsContributions;
-
     #[ORM\ManyToOne(inversedBy: 'titles')]
     private ?Series $series = null;
 
@@ -59,6 +57,17 @@ class Title implements HasUploadedImagesInterface
     public function __construct()
     {
         $this->artistsContributions = new ArrayCollection();
+    }
+
+    public function getIsbn(): ?string
+    {
+        return $this->isbn;
+    }
+
+    public function setIsbn(string $isbn): static
+    {
+        $this->isbn = $isbn;
+        return $this;
     }
 
     public function getId(): ?int

@@ -8,7 +8,6 @@ use App\Enum\Language;
 
 trait HasLanguageTrait
 {
-    #[Groups(['title:read'])]
     #  ISO 639-1 (2-letter codes like en, fr, es)
     #[ORM\Column(length: 2, nullable: true, enumType: Language::class)]
     private ?Language $language = null;

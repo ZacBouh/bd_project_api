@@ -14,11 +14,9 @@ trait HasUploadedImagesTrait
     /**
      * @var Collection<int, UploadedImage>
      */
-    #[Groups(['title:read', 'artist:read'])]
     #[ORM\ManyToMany(targetEntity: UploadedImage::class)]
     private Collection $uploadedImages;
 
-    #[Groups(['title:read', 'artist:read', 'publisher:read'])]
     #[ORM\ManyToOne(targetEntity: UploadedImage::class, cascade: ['persist'])]
     private ?UploadedImage $coverImage = null;
 

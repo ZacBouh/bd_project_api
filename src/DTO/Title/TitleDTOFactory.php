@@ -8,11 +8,9 @@ use App\DTO\Title\TitleReadDTO;
 use App\DTO\Title\TitleWriteDTO;
 use App\Entity\Publisher;
 use App\Enum\Language;
-use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\FileBag;
 use Symfony\Component\HttpFoundation\InputBag;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
-use Vich\UploaderBundle\Templating\Helper\UploaderHelper;
 
 /**
  * @extends AbstractDTOFactory<Title, TitleReadDTO, TitleWriteDTO>
@@ -45,7 +43,8 @@ class TitleDTOFactory extends AbstractDTOFactory
             $this->getCoverImageFile($f),
             $artistsContributions, //@phpstan-ignore-line
             $i->getString('releaseDate') !== '' ? $i->getString('releaseDate') : null,
-            $this->getUploadedImagesFiles($f)
+            $this->getUploadedImagesFiles($f),
+            $i->getString('isbn') !== '' ? $i->getString('isbn') : null
         );
         return $dto;
     }
@@ -96,6 +95,7 @@ class TitleDTOFactory extends AbstractDTOFactory
             $coverImage,
             $title->getReleaseDate()?->format('Y-m-d'),
             [],
+            $title->getIsbn()
         );
     }
 }

@@ -79,5 +79,8 @@ class TitleWriteDTO
         ])]
         #[Ignore]
         public ?array $uploadedImages,
+
+        #[Assert\Isbn(message: "The provided isbn is not in a valid format")]
+        public ?string $isbn
     ) {}
 }

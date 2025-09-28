@@ -26,5 +26,6 @@ class TitleReadDTO
         public ?UploadedImageReadDTO $coverImage,
         public ?string $releaseDate,
         public ?array $uploadedImages,
+        public ?string $isbn
     ) {}
 }
