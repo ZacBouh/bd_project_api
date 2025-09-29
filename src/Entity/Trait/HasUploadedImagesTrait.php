@@ -84,8 +84,11 @@ trait HasUploadedImagesTrait
         return null;
     }
 
-    public function setCoverImage(UploadedImage $coverImage): static
+    public function setCoverImage(?UploadedImage $coverImage = null): static
     {
+        if (is_null($coverImage)) {
+            return $this;
+        }
         $this->addUploadedImage($coverImage);
         $this->coverImage = $coverImage;
         return $this;

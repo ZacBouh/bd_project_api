@@ -82,7 +82,8 @@ final class AuthController extends AbstractController
         $access_token = $tokenResponse->toArray()['access_token'];
         $this->logger->warning("Google OAuth access_token : $access_token");
         $userInfoResponse = $this->httpClient->request('GET', $openIdConfig["userinfo_endpoint"], ['headers' => ['Authorization' => "Bearer $access_token"]]);
-        $this->logger->warning("retrieved user info from google : " . json_encode($userInfoResponse->toArray()));
+        $userInfo = $userInfoResponse->toArray();
+        $this->logger->warning("retrieved user info from google : " . json_encode($userInfo));
         return $this->redirect('http://localhost:8082/titles');
     }
 }

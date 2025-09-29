@@ -100,11 +100,11 @@ class CopyManagerService
      * @throws ResourceNotFoundException
      * @throws AccessDeniedException
      */
-    public function removeCopy(CopyWriteDTO|string|int $copyDTO): void
+    public function removeCopy(int $copyId): void
     {
         /** @var User $user */
         $user = $this->security->getUser();
-        $copyId = $copyDTO instanceof CopyWriteDTO ? $copyDTO->id : $copyDTO;
+        $this->logger->debug("Looking for a copy to remove with id $copyId");
         /** @var Copy|null $copy */
         $copy = $this->copyRepository->findOneBy(['id' => $copyId]);
         if (is_null($copy)) {

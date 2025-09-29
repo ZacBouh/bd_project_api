@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\DTO\Copy\CopyDTOFactory;
 use App\DTO\Copy\CopyWriteDTO;
 use App\Service\CopyManagerService;
+use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -45,11 +46,19 @@ final class CopyController extends AbstractController
 
     #[Route('/api/copy', name: 'copy_remove', methods: 'DELETE')]
     public function removeCopy(
-        #[MapRequestPayload] CopyWriteDTO $copyDTO
+        Request $request
     ): JsonResponse {
         try {
-            $this->copyService->removeCopy($copyDTO);
-            return $this->json(['message' => 'Copy successfully removed, id : ' . $copyDTO->id]);
+            /** @var int|null $copyId */
+            $copyId = json_decode($request->getContent(), true)['id'] ?? null; //@phpstan-ignore-line
+            if (is_null($copyId)) {
+                throw new InvalidArgumentException('The id is null ');
+            }
+            $this->logger->warning("Intenting to remove copy with id : $copyId");
+            $this->copyService->removeCopy($copyId);
+            return $this->json(['message' => 'Copy successfully removed, id : ' . $copyId]);
+        } catch (InvalidArgumentException $e) {
+            return $this->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         } catch (\Exception $e) {
             return $this->json(['message' => 'error' . $e->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR]);
         }
