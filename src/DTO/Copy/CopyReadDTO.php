@@ -28,5 +28,6 @@ class CopyReadDTO
         public ?string $boughtForCurrency,
         public ?UploadedImageReadDTO $coverImage,
         public ?array $uploadedImages,
+        public ?bool $forSale
     ) {}
 }

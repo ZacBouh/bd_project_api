@@ -36,5 +36,7 @@ class CopyWriteDTO
          * @var array<UploadedFile>
          */
         public ?array $uploadedImages,
+
+        public ?bool $forSale
     ) {}
 }

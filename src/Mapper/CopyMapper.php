@@ -32,12 +32,13 @@ class CopyMapper extends AbstractEntityMapper
     public function fromWriteDTO(object $dto, ?object $entity = null, array $extra = []): object
     {
         $data = $this->normalizer->normalize($dto, 'array');
-        $this->logger->debug('Normalized CopyWriteDTO');
+        $this->logger->debug(sprintf('Normalized CopyWriteDTO : %s', json_encode($data)));
         /** @var Copy $copy */
         $copy = $this->denormalizer->denormalize($data, Copy::class, context: [
-            AbstractObjectNormalizer::IGNORED_ATTRIBUTES => ["owner", "title", 'coverImage', 'uploadedImages']
+            AbstractObjectNormalizer::IGNORED_ATTRIBUTES => ["owner", "title", 'coverImage', 'uploadedImages'],
+            AbstractObjectNormalizer::OBJECT_TO_POPULATE => $entity
         ]);
-        $this->logger->debug("Denormalized CopyWrite data to new Copy");
+        $this->logger->debug(sprintf("Denormalized CopyWrite data to new Copy %s", json_encode($copy->getForSale())));
         $copy->setOwner($this->em->getReference(User::class, $dto->owner)); //@phpstan-ignore-line
         $copy->setTitle($this->em->getReference(Title::class, $dto->title)); //@phpstan-ignore-line
         $copy = parent::afterDenormalization($dto, $copy, $extra);

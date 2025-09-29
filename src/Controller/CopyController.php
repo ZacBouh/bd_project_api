@@ -68,8 +68,8 @@ final class CopyController extends AbstractController
     public function updateCopy(
         Request $request
     ): JsonResponse {
-
         $updatedCopy = $this->copyService->updateCopy($request->request, $request->files);
-        return $this->json($updatedCopy);
+        $dto = $this->dtoFactory->readDtoFromEntity($updatedCopy);
+        return $this->json($dto);
     }
 }

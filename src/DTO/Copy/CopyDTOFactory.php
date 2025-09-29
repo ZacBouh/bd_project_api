@@ -33,7 +33,8 @@ class CopyDTOFactory extends AbstractDTOFactory
             $this->getFloat($i, 'boughtForPrice'),
             $i->getEnum('boughtForCurrency', PriceCurrency::class),
             $this->getCoverImageFile($f),
-            $this->getUploadedImagesFiles($f)
+            $this->getUploadedImagesFiles($f),
+            $i->getBoolean('forSale')
         );
         return $dto;
     }
@@ -60,7 +61,8 @@ class CopyDTOFactory extends AbstractDTOFactory
             $entity->getBoughtForPrice(),
             $entity->getBoughtForCurrency()?->value,
             $coverImage,
-            []
+            [],
+            $entity->getForSale()
         );
 
         return $dto;

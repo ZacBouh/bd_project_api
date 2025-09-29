@@ -23,38 +23,55 @@ class Copy implements HasUploadedImagesInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['copy:read'])]
+    // #[Groups(['copy:read'])]
     private ?int $id = null;
 
-    #[Groups(['copy:read'])]
+    // #[Groups(['copy:read'])]
     #[ManyToOne(targetEntity: User::class, fetch: 'LAZY')]
     #[JoinColumn(name: 'owner_id', referencedColumnName: 'id')]
     private ?User $owner = null;
 
-    #[Groups(['copy:read'])]
+    // #[Groups(['copy:read'])]
     #[ManyToOne(targetEntity: Title::class, fetch: 'LAZY')]
     #[JoinColumn(name: 'title_id', referencedColumnName: 'id')]
     private ?Title $title = null;
 
-    #[Groups(['copy:read'])]
+    // #[Groups(['copy:read'])]
     #[ORM\Column(enumType: CopyCondition::class)]
     private CopyCondition $copyCondition;
 
-    #[Groups(['copy:read'])]
+    // #[Groups(['copy:read'])]
     #[ORM\Column(nullable: true)]
     private ?float $price = null;
 
-    #[Groups(['copy:read'])]
+    // #[Groups(['copy:read'])]
     #[ORM\Column(nullable: true, enumType: PriceCurrency::class)]
     private ?PriceCurrency $currency = null;
 
-    #[Groups(['copy:read'])]
+    // #[Groups(['copy:read'])]
     #[ORM\Column(nullable: true)]
     private ?float $boughtForPrice = null;
 
-    #[Groups(['copy:read'])]
+    // #[Groups(['copy:read'])]
     #[ORM\Column(nullable: true, enumType: PriceCurrency::class)]
     private ?PriceCurrency $boughtForCurrency = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $forSale = null;
+
+    public function getForSale(): bool
+    {
+        if (is_null($this->forSale)) {
+            return false;
+        }
+        return $this->forSale;
+    }
+
+    public function setForSale(bool $forSale): static
+    {
+        $this->forSale = $forSale;
+        return $this;
+    }
 
     public function getId(): ?int
     {

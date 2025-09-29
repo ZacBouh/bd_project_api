@@ -38,7 +38,6 @@ class CopyManagerService
         private Security $security,
         private UploadedImageService $imageService,
         private EntityManagerInterface $entityManager,
-        private CopyDTOBuilder $dtoBuilder,
         private CopyMapper $copyMapper,
         private ValidatorInterface $validator,
         private CopyDTOFactory $dtoFactory,
@@ -125,7 +124,9 @@ class CopyManagerService
      */
     public function updateCopy(InputBag $inputBag, FileBag $files): Copy
     {
-        $dto = $this->dtoBuilder->writeDTOFromInputBags($inputBag, $files)->buildWriteDTO();
+        $dto = $this->dtoFactory->writeDtoFromInputBag($inputBag, $files);
+        $this->logger->warning(sprintf("Content of request: %s", json_encode($inputBag->all())));
+        $this->logger->warning(sprintf('DTO For Sale status : %s ', json_encode($dto)));
         if (is_null($dto->id)) {
             throw new InvalidArgumentException('Update copy : id is null');
         }
@@ -135,7 +136,8 @@ class CopyManagerService
             throw new ResourceNotFoundException("Update Copy : no copy found for id " . $dto->id);
         }
 
-        $this->copyMapper->fromWriteDTO($dto, $copy);
+        $copy = $this->copyMapper->fromWriteDTO($dto, $copy);
+        $this->logger->critical(sprintf("Copy For Sale status : %s", json_encode($copy->getForSale())));
         $this->entityManager->persist($copy);
         $this->entityManager->flush();
 
