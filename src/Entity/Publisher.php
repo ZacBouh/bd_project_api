@@ -16,6 +16,12 @@ use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: PublisherRepository::class)]
 #[ORM\HasLifecycleCallbacks]
+#[ORM\Table(
+    name: 'publisher',
+    indexes: [
+        new ORM\Index(name: 'ft_publisher_name', columns: ['name'], flags: ['fulltext'])
+    ]
+)]
 class Publisher implements HasUploadedImagesInterface
 {
     use HasUploadedImagesTrait;

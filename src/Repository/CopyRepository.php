@@ -60,6 +60,36 @@ class CopyRepository extends ServiceEntityRepository
         return $copies;
     }
 
+    /** 
+     * @return Copy[]
+     */
+    public function searchCopy(string $query, int $limit = 200, int $offset = 0, ?bool $forSale = null): array
+    {
+        $qb = $this->createQueryBuilder('c')
+            ->leftJoin('c.title', 't')
+            ->leftjoin('t.publisher', 'tp')
+            ->addSelect("MATCH (t.name) AGAINST (:q IN BOOLEAN MODE) AS HIDDEN t_score")
+            ->addSelect("MATCH (tp.name) AGAINST (:q IN BOOLEAN MODE) AS HIDDEN tp_score")
+            ->having('t_score > 0 OR tp_score > 0')
+
+            ->orderBy('CASE WHEN t_score > 0 THEN 1 ELSE 0 END', 'DESC')
+            ->addOrderBy('t_score', 'DESC')
+            ->addOrderBy('tp_score', 'DESC')
+            ->addOrderBy('c.updatedAt')
+
+            ->setParameter('q', $query)
+            ->setFirstResult($offset)
+            ->setMaxResults($limit);
+
+        if (!is_null($forSale)) {
+            $qb->andWhere('c.forSale = :fs')
+                ->setParameter('fs', $forSale);
+        }
+        /** @var Copy[] $copies */
+        $copies = $qb->getQuery()->getResult();
+        return $copies;
+    }
+
     //    /**
     //     * @return Copy[] Returns an array of Copy objects
     //     */

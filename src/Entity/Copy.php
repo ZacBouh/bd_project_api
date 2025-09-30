@@ -11,7 +11,6 @@ use App\Repository\CopyRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\JoinColumn;
 use Doctrine\ORM\Mapping\ManyToOne;
-use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: CopyRepository::class)]
 #[ORM\HasLifecycleCallbacks]

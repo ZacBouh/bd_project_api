@@ -2,7 +2,6 @@
 
 namespace App\Service;
 
-use App\DTO\Copy\CopyDTOBuilder;
 use App\DTO\Copy\CopyDTOFactory;
 use App\DTO\Copy\CopyReadDTO;
 use App\DTO\Copy\CopyWriteDTO;
@@ -22,11 +21,8 @@ use App\Repository\UserRepository;
 use App\Security\Role;
 use Doctrine\ORM\EntityManagerInterface;
 use InvalidArgumentException;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Exception\ResourceNotFoundException;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
-use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
-use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Symfony\Component\Validator\Exception\ValidationFailedException;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -142,5 +138,23 @@ class CopyManagerService
         $this->entityManager->flush();
 
         return $copy;
+    }
+
+    /**
+     * @return Copy[]
+     */
+    public function searchCopy(string $query, int $limit = 200, int $offset = 0, ?bool $forSale = null): array
+    {
+        if (trim($query, " \n\r\t\v\0") == "") {
+            throw new InvalidArgumentException("Cannot search title with an empty string as query");
+        }
+        $queryWords = preg_split('/\s+/', trim($query));
+        if ($queryWords === false) {
+            throw new InvalidArgumentException('The query does not contain any valid word');
+        }
+        $queryWords = array_filter($queryWords); // to drop empty values
+        $query = implode(' ', array_map(fn($word) => "$word*", $queryWords));
+        $copies = $this->copyRepository->searchCopy($query, $limit, $offset, $forSale);
+        return $copies;
     }
 }

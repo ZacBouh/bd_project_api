@@ -3,15 +3,14 @@
 namespace App\Controller;
 
 use App\DTO\Copy\CopyDTOFactory;
-use App\DTO\Copy\CopyWriteDTO;
 use App\Service\CopyManagerService;
 use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
 
 final class CopyController extends AbstractController
@@ -71,5 +70,31 @@ final class CopyController extends AbstractController
         $updatedCopy = $this->copyService->updateCopy($request->request, $request->files);
         $dto = $this->dtoFactory->readDtoFromEntity($updatedCopy);
         return $this->json($dto);
+    }
+
+    #[Route('/api/copy/search', name: 'copy_search', methods: 'GET')]
+    public function searchCopy(
+        Request $request
+    ): JsonResponse {
+        try {
+
+            $user = $this->getUser();
+            $query = $request->query->getString('query');
+            $limit = $request->query->getInt('limit', 200);
+            $offset = $request->query->getInt('offset', 0);
+            $forSale = $request->query->get('forSale', null) ? $request->query->getBoolean('forSale') : null;
+            $this->logger->debug("Copy search request : $query limit: $limit offset: $offset, forSale: $forSale");
+            $copies = $this->copyService->searchCopy($query, $limit, $offset, $forSale);
+            $this->logger->debug(sprintf("Found %s copies for query $query", count($copies)));
+            $dtos = [];
+            foreach ($copies as $copy) {
+                $dtos[] = $this->dtoFactory->readDtoFromEntity($copy);
+            }
+            return $this->json($dtos);
+        } catch (InvalidArgumentException $e) {
+            return $this->json($e->getMessage(), Response::HTTP_BAD_REQUEST);
+        } catch (BadRequestException $e) {
+            return $this->json($e->getMessage(), Response::HTTP_BAD_REQUEST);
+        }
     }
 }
