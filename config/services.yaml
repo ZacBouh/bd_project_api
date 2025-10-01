@@ -21,7 +21,10 @@ services:
             $serializer: '@serializer'
         tags:
             - {name: kernel.event_listener, event: lexik_jwt_authentication.on_authentication_success, method: onAuthenticationSuccess }
-    
+
+    Stripe\StripeClient:
+        arguments:
+            - '%env(STRIPE_API_KEY)%'    
     # App\ArgumentResolver\ArtistPayloadResolver:
     #     tags: 
     #         - {name: controller.argument_value_resolver}

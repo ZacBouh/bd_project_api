@@ -40,8 +40,8 @@ final class SearchController extends AbstractController
     }
 
     #[Route('/', name: 'healt_check', methods: 'GET')]
-    public function healtCheck(): string
+    public function healtCheck(): Response
     {
-        return "Server Up";
+        return new Response("Server Up :)");
     }
 }
