@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Service\AuthService;
+use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -20,7 +21,8 @@ final class AuthController extends AbstractController
 
     public function __construct(
         private LoggerInterface $logger,
-        private AuthService $authService
+        private AuthService $authService,
+        private JWTTokenManagerInterface $jwtManager
     ) {}
 
     #[Route('/auth/register', name: 'auth_register', methods: 'POST')]
@@ -40,6 +42,13 @@ final class AuthController extends AbstractController
         return new Response("You have nothing to do here", Response::HTTP_BAD_GATEWAY);
     }
 
+    #[Route('/api/user', name: 'api_get_user', methods: 'GET')]
+    public function getUserInfo(): JsonResponse
+    {
+        $user = $this->getUser();
+        return $this->json($user, 200, context: ['groups' => 'user:read']);
+    }
+
     #[Route('/auth/oauth2', name: 'auth_oauth_callback', methods: 'GET')]
     public function googleOauth2Callback(
         #[MapQueryParameter('code')] string $code,
@@ -49,6 +58,9 @@ final class AuthController extends AbstractController
         $this->logger->critical("Received oauth2 request { code: $code, state: $jsonEncodedState, scope: '$scope'}");
         $user = $this->authService->handleGoogleOauth2($code);
         $this->logger->debug('Successfully logged in user ' . $user->getPseudo() . " email: " . $user->getEmail());
-        return $this->redirect('http://localhost:8082/titles');
+        $token = $this->jwtManager->create($user);
+        return $this->redirect(
+            'http://localhost:8082/oauth#token=' . urlencode($token)
+        );
     }
 }
