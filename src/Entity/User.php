@@ -47,12 +47,28 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     /**
      * @var string The hashed password
      */
-    #[ORM\Column]
-    #[Ignore]
-    private string $password;
+    #[ORM\Column(nullable: true)]
+    private ?string $password = null;
 
     #[ORM\Column(nullable: true)]
     private ?string $googleSub = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $emailVerified = false;
+
+    public function getEmailVerified(): bool
+    {
+        if (is_null($this->emailVerified)) {
+            return false;
+        }
+        return $this->emailVerified;
+    }
+
+    public function setEmailVerified(bool $emailVerified): static
+    {
+        $this->emailVerified = $emailVerified;
+        return $this;
+    }
 
     public function getId(): ?int
     {
@@ -156,8 +172,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function __serialize(): array
     {
         $data = (array) $this;
-        $data["\0" . self::class . "\0password"] = hash('crc32c', $this->password);
-
+        if (!is_null($this->password)) {
+            $data["\0" . self::class . "\0password"] = hash('crc32c', $this->password);
+        }
         return $data;
     }
 
