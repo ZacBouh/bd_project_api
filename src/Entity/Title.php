@@ -16,12 +16,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 use App\Entity\ArtistTitleContribution;
 
 #[ORM\Entity(repositoryClass: TitleRepository::class)]
-#[ORM\Table(
-    name: 'title',
-    indexes: [
-        new ORM\Index(name: 'ft_title_name', columns: ['name'], flags: ['fulltext'])
-    ]
-)]
+#[ORM\Index(name: 'ft_title_name', columns: ['name'], flags: ['fulltext'])]
 class Title implements HasUploadedImagesInterface
 {
     use HasUploadedImagesTrait;

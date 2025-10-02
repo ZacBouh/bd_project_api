@@ -16,12 +16,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 
 #[HasLifecycleCallbacks]
 #[ORM\Entity(repositoryClass: ArtistRepository::class)]
-#[ORM\Table(
-    name: 'artist',
-    indexes: [
-        new ORM\Index(name: 'ft_artist_name_pseudo', columns: ['first_name', 'last_name', 'pseudo'], flags: ['fulltext'])
-    ]
-)]
+#[ORM\Index(name: 'ft_artist_name_pseudo', columns: ['first_name', 'last_name', 'pseudo'], flags: ['fulltext'])]
 class Artist implements HasUploadedImagesInterface
 {
     use HasUploadedImagesTrait;
