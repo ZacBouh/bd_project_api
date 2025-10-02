@@ -22,7 +22,8 @@ class PaymentService
         private ValidatorInterface $validator,
         private CopyRepository $copyRepo,
         private LoggerInterface $logger,
-        private Security $security
+        private Security $security,
+        private MailerService $mailService
     ) {}
 
     /**
@@ -125,6 +126,11 @@ class PaymentService
         switch ($event->type) {
             case 'checkout.session.completed':
                 $this->logger->debug(sprintf("CHECKOUT COMPLETED : %s", $event->data->object->metadata));
+                $this->mailService->sendMail(
+                    to: 'zacharie.bouhaya@gmail.com',
+                    subject: 'Successful Purchase',
+                    content: sprintf('Your successfully purchased your comics books : %s', $event->data->object->metadata)
+                );
                 break;
             case 'checkout.session.expired':
                 $this->logger->debug("CHECKOUT SESSION EXPIRED");
