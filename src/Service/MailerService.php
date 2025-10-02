@@ -24,7 +24,7 @@ class MailerService
                 ->from(new Address('zetrashz@gmail.com', 'Comic Hood'))
                 ->to($to)
                 ->subject($subject)
-                ->html(sprintf("<p>%s</p>", $content));
+                ->html($content);
             $this->mailer->send($email);
             $this->logger->debug("Email sent");
         }

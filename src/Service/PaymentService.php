@@ -41,7 +41,7 @@ class PaymentService
                     'currency' => 'eur',
                     'unit_amount' => (int) round($copy->getPrice() * 100),
                     'product_data' => [
-                        'name' => $copy->getId() . "_" . $copy->getTitle()?->getName()
+                        'name' => $copy->getTitle()?->getName()
                     ]
                 ],
                 'quantity' => 1
