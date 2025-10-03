@@ -13,10 +13,12 @@
     },
     "deploy" : {
         "startCommand" : "php -S 0.0.0.0:8000 -t public",
-        "inputs" : {
-            "step": "build",
-            "include": ["."]
-        },
+        "inputs" : [
+            {
+                "step": "build",
+                "include": ["."]
+            }
+        ],
         "paths": [],
         "base": null
     }
