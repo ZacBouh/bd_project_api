@@ -6,10 +6,10 @@
         },
         "build" : {
             "commands": [
-                "mkdir /app && cp -R . /app",
-                "cd /app",
+                "mkdir /app",
+                {"copy" : {"src": ".", "dest": "/app"}},
                 "...",
-                "php bin/console doctrine:migrations:migrate --no-interaction --env=$APP_ENV || true",
+                "php bin/console doctrine:migrations:migrate --no-interaction --env=$APP_ENV || true"
             ]
         }   
     },
