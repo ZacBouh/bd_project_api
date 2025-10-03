@@ -6,18 +6,21 @@
         },
         "build" : {
             "commands": [
-                "php bin/console cache:clear",
-                "php bin/console cache:warmup",
+                "mkdir /app",
+                "cp -R . /app",
+                "cd /app",
+                "php bin/console cache:clear --env=$APP_ENV",
+                "php bin/console cache:warmup --env=$APP_ENV",
                 "php bin/console doctrine:migrations:migrate --no-interaction --env=$APP_ENV || true"
             ]
         }   
     },
     "deploy" : {
-        "startCommand" : "php -S 0.0.0.0:8000 -t public",
+        "startCommand" : "frankenphp php-server --listen=0.0.0.0 --root=public",
         "inputs": [
             {
                 "step": "build",
-                "include": ["."]
+                "include": [".", "/app"]
             }
         ],
         "paths": [],
