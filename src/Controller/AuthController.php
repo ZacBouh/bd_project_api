@@ -63,4 +63,15 @@ final class AuthController extends AbstractController
             'http://localhost:8082/oauth#token=' . urlencode($token)
         );
     }
+
+    #[Route('/auth/verify-email', name: 'verify_email', methods: 'GET')]
+    public function verifyEmail(Request $request): Response
+    {
+        $token = $request->query->getString('token');
+        if ($token === '') {
+            return new Response("Missing Token", Response::HTTP_BAD_REQUEST);
+        }
+        $user = $this->authService->handleEmailValidation($token);
+        return new RedirectResponse('http://localhost:8082/login');
+    }
 }

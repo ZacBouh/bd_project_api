@@ -4,14 +4,19 @@ namespace App\Service;
 
 use App\Entity\User;
 use App\Repository\UserRepository;
+use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\NonUniqueResultException;
 use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use Symfony\Component\HttpFoundation\Exception\BadRequestException;
+use Symfony\Component\HttpFoundation\UriSigner;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Component\Uid\Uuid;
 
 class AuthService
 {
@@ -20,7 +25,9 @@ class AuthService
         private UserPasswordHasherInterface $passwordHasher,
         private EntityManagerInterface $em,
         private HttpClientInterface $httpClient,
-        private UserRepository $userRepo
+        private UserRepository $userRepo,
+        private UrlGeneratorInterface $urlGenerator,
+        private MailerService $mailService,
     ) {}
 
     /**
@@ -38,6 +45,9 @@ class AuthService
         }
         $this->em->persist($user);
         $this->em->flush();
+        if (!$user->getEmailVerified()) {
+            $this->sendEmailValidation($user);
+        }
         return $user;
     }
 
@@ -95,6 +105,56 @@ class AuthService
             $this->em->flush();
             return $user;
         }
+        return $user;
+    }
+
+    public function sendEmailValidation(User $user): void
+    {
+        if ($user->getEmailVerified()) {
+            return;
+        }
+
+        $userEmail = $user->getEmail();
+        if (is_null($userEmail)) {
+            throw new InvalidArgumentException('User Email is not defined');
+        }
+
+        $token = Uuid::v4()->toBase58();
+        $expiresAt = new DateTimeImmutable('+1 hour');
+        $user->setEmailVerificationToken($token);
+        $user->setEmailVerificationExpiresAt($expiresAt);
+        $this->em->persist($user);
+        $this->em->flush();
+
+        $verifyUrl = $this->urlGenerator->generate("verify_email", [
+            'token' => $token
+        ], UrlGeneratorInterface::ABSOLUTE_URL);
+
+        $this->mailService->sendMail(
+            to: $userEmail,
+            subject: "Validate your email",
+            content: "
+            <p>To complete you account registration, validate your email using this link: <a href='$verifyUrl'>Verify</a></p>
+            <p>This link will expires after 1 hour.</p>
+            "
+        );
+    }
+
+    public function handleEmailValidation(string $token): User
+    {
+        /** @var User|null $user */
+        $user = $this->userRepo->findOneBy(['emailVerificationToken' => $token]);
+        if (is_null($user)) {
+            throw new BadRequestException("Invalid token, no user found");
+        }
+        if ($user->getEmailVerificationExpiresAt() < new DateTimeImmutable()) {
+            throw new BadRequestException("Token expired, email not validated");
+        }
+
+        $user->setEmailVerificationExpiresAt(null);
+        $user->setEmailVerificationToken(null);
+        $user->setEmailVerified(true);
+        $this->em->flush();
         return $user;
     }
 }

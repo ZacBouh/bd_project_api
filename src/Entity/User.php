@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Entity\Trait\HasDefaultNormalizeCallback;
 use App\Entity\Trait\TimestampableTrait;
 use App\Repository\UserRepository;
+use DateTimeImmutable;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -55,6 +56,33 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(nullable: true)]
     private ?bool $emailVerified = false;
+
+    #[ORM\Column(nullable: true)]
+    private ?string $emailVerificationToken = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?DateTimeImmutable $emailVerificationExpiresAt = null;
+
+    public function getEmailVerificationExpiresAt(): ?DateTimeImmutable
+    {
+        return $this->emailVerificationExpiresAt;
+    }
+
+    public function setEmailVerificationExpiresAt(DateTimeImmutable|null $date): static
+    {
+        $this->emailVerificationExpiresAt = $date;
+        return $this;
+    }
+    public function getEmailVerificationToken(): ?string
+    {
+        return $this->emailVerificationToken;
+    }
+
+    public function setEmailVerificationToken(string|null $token): static
+    {
+        $this->emailVerificationToken = $token;
+        return $this;
+    }
 
     public function getEmailVerified(): bool
     {
