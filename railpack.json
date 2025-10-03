@@ -2,11 +2,7 @@
     "$schema": "https://schema.railpack.com",
     "steps": {
         "install": {
-            "commands" : [
-                "composer install --no-dev --optimize-autoloader --no-interaction",
-                "composer dump-env prod"
-            ],
-            "caches": ["~/.composer/cache"]
+            "commands" : "..."
         },
         "build" : {
             "commands": [
