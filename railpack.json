@@ -7,16 +7,17 @@
         "build" : {
             "commands": [
                 "...",
-                "php bin/console doctrine:migrations:migrate --no-interaction --env=$APP_ENV || true"
+                "php bin/console doctrine:migrations:migrate --no-interaction --env=$APP_ENV || true",
+                "mkdir /app && cp -R . /app"
             ]
         }   
     },
     "deploy" : {
         "startCommand" : "php -S 0.0.0.0:8000 -t public",
-        "inputs" : [
+        "inputs": [
             {
                 "step": "build",
-                "include": ["."]
+                "include": ["/app"]
             }
         ],
         "paths": [],
