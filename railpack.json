@@ -6,6 +6,8 @@
         },
         "build" : {
             "commands": [
+                "ls -a",
+                "echo 'fucking let the cache go'",
                 "mkdir /app",
                 "cp -R . /app",
                 "cd /app",
