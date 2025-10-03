@@ -1,13 +1,10 @@
 {
-    "$schema": "https://schema.railpack.com",
+    "$schema": "https://schema.railpack.com/v2",
     "steps": {
         "install": {
-            "commands" : ["..."]
+            "commands" : ["composer install --no-dev --optimize-autoloader --no-interaction"]
         },
         "build" : {
-            "inputs":[
-                {"local": true, "include":["./"]}
-            ],
             "commands": [
                 "ls -a",
                 "echo 'fucking let the cache go'",
