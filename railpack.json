@@ -5,6 +5,9 @@
             "commands" : ["..."]
         },
         "build" : {
+            "inputs":[
+                {"local": true, "include":["./"]}
+            ],
             "commands": [
                 "ls -a",
                 "echo 'fucking let the cache go'",
