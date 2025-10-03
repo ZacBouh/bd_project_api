@@ -7,6 +7,12 @@
             ]
         },
         "build" : {
+            "inputs": [
+                {
+                    "step": "install",
+                    "include": ["."]
+                }
+            ],
             "commands": [
                 "ls -a",
                 "echo 'fucking let the cache go'",
@@ -24,7 +30,7 @@
         "inputs": [
             {
                 "step": "build",
-                "include": [".", "/app"]
+                "include": ["."]
             }
         ],
         "paths": [],
