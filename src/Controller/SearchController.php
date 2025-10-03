@@ -24,7 +24,6 @@ final class SearchController extends AbstractController
     public function scanComicPicture(
         Request $request
     ): JsonResponse {
-
         /** @var User $user */
         $user = $this->getUser();
         $request->request->add(['user' => $user->getId()]);
@@ -37,11 +36,5 @@ final class SearchController extends AbstractController
         }
         $response = new JsonResponse($data, 200, json: true);
         return $response;
-    }
-
-    #[Route('/', name: 'healt_check', methods: 'GET')]
-    public function healtCheck(): Response
-    {
-        return new Response("Server Up :)");
     }
 }

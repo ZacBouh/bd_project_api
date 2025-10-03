@@ -25,6 +25,12 @@ final class AuthController extends AbstractController
         private JWTTokenManagerInterface $jwtManager
     ) {}
 
+    #[Route('/', name: 'healt_check', methods: 'GET')]
+    public function healtCheck(): Response
+    {
+        return new Response("Server Up :)");
+    }
+
     #[Route('/auth/register', name: 'auth_register', methods: 'POST')]
     public function register(Request $request, SerializerInterface $serializer): JsonResponse
     {
