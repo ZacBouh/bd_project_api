@@ -3,7 +3,7 @@
 namespace App\DTO\Artist;
 
 use App\DTO\UploadedImage\UploadedImageReadDTO;
-use App\DTO\TitleContribution\ArtistTitleContributionReadDTO;
+use App\DTO\ArtistTitleContribution\ArtistTitleContributionReadDTO;
 
 class ArtistReadDTO
 {
