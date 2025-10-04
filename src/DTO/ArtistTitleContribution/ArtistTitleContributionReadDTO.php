@@ -1,6 +1,6 @@
 <?php
 
-namespace App\DTO\TitleContribution;
+namespace App\DTO\ArtistTitleContribution;
 
 use App\DTO\Artist\ArtistReadDTO;
 use App\DTO\Title\TitleReadDTO;
