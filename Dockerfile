@@ -1,8 +1,10 @@
 FROM php:8.4.13-fpm-trixie
 
-# Utilities
-RUN apt-get update && apt-get install -y unzip curl git procps  lsb-release ca-certificates apt-transport-https gnupg && \
-    docker-php-ext-install pdo pdo_mysql
+# Debian Packages
+RUN apt-get update && apt-get install -y unzip curl git procps  lsb-release ca-certificates apt-transport-https gnupg \
+    libicu-dev \
+    && docker-php-ext-install pdo pdo_mysql intl
+
 
 # Composer
 ARG COMPOSER_SHA
