@@ -9,20 +9,20 @@
         "ext-iconv": "*",
         "ext-pdo_mysql": "*",
         "beberlei/doctrineextensions": "^1.5",
-        "doctrine/dbal": "^3",
-        "doctrine/doctrine-bundle": "^2.15",
-        "doctrine/doctrine-migrations-bundle": "^3.4",
-        "doctrine/orm": "^3.5",
-        "lexik/jwt-authentication-bundle": "^3.1",
+        "doctrine/dbal": "^3.10.2",
+        "doctrine/doctrine-bundle": "^2.16.2",
+        "doctrine/doctrine-migrations-bundle": "^3.4.2",
+        "doctrine/orm": "^3.5.2",
+        "lexik/jwt-authentication-bundle": "^3.1.1",
         "nelmio/cors-bundle": "^2.5",
-        "phpdocumentor/reflection-docblock": "^5.6",
-        "phpstan/phpdoc-parser": "^2.2",
-        "phpstan/phpstan-symfony": "^2.0",
+        "phpdocumentor/reflection-docblock": "^5.6.3",
+        "phpstan/phpdoc-parser": "^2.3",
+        "phpstan/phpstan-symfony": "^2.0.8",
         "stripe/stripe-php": "^18.0",
-        "symfony/brevo-mailer": "^7.3",
+        "symfony/brevo-mailer": "^7.3.2",
         "symfony/console": "7.3.*",
         "symfony/dotenv": "7.3.*",
-        "symfony/flex": "^2",
+        "symfony/flex": "^2.8.2",
         "symfony/framework-bundle": "7.3.*",
         "symfony/http-client": "7.3.*",
         "symfony/http-foundation": "7.3.*",
@@ -38,7 +38,7 @@
         "symfony/uid": "7.3.*",
         "symfony/validator": "7.3.*",
         "symfony/yaml": "7.3.*",
-        "vich/uploader-bundle": "^2.7"
+        "vich/uploader-bundle": "^2.8.1"
     },
     "config": {
         "allow-plugins": {
@@ -91,8 +91,8 @@
         }
     },
     "require-dev": {
-        "phpstan/phpstan": "^2.1",
-        "phpstan/phpstan-doctrine": "^2.0",
+        "phpstan/phpstan": "^2.1.30",
+        "phpstan/phpstan-doctrine": "^2.0.6",
         "symfony/maker-bundle": "^1.64"
     }
 }
