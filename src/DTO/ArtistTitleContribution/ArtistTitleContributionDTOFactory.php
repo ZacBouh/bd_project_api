@@ -3,8 +3,8 @@
 namespace App\DTO\ArtistTitleContribution;
 
 use App\DTO\Builder\AbstractDTOFactory;
-use App\DTO\TitleContribution\ArtistTitleContributionReadDTO;
-use App\DTO\TitleContribution\ArtistTitleContributionWriteDTO;
+use App\DTO\ArtistTitleContribution\ArtistTitleContributionReadDTO;
+use App\DTO\ArtistTitleContribution\ArtistTitleContributionWriteDTO;
 use App\Entity\ArtistTitleContribution;
 use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\InputBag;
