@@ -34,11 +34,17 @@ final class AuthController extends AbstractController
     #[Route('/auth/register', name: 'auth_register', methods: 'POST')]
     public function register(Request $request, SerializerInterface $serializer): JsonResponse
     {
-        $jsonData = $request->getContent();
-        $this->logger->info("Received register request : $jsonData");
-        $user = $serializer->deserialize($jsonData, User::class, 'json');
-        $this->authService->registerUser($user);
-        return $this->json($user, 200, context: ['groups' => 'user:read']);
+        try {
+            $jsonData = $request->getContent();
+            $this->logger->info("Received register request : $jsonData");
+            $user = $serializer->deserialize($jsonData, User::class, 'json');
+            $this->authService->registerUser($user);
+            return $this->json($user, 200, context: ['groups' => 'user:read']);
+        } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $error) {
+            return $this->json(['message' => 'An account with this email already exists'], Response::HTTP_CONFLICT);
+        } catch (\Throwable $error) {
+            return $this->json($error, Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     #[Route('/auth/login', name: 'auth_login', methods: 'POST')]
