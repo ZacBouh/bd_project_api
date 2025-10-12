@@ -22,6 +22,7 @@ class ScanService
         private HttpClientInterface $http,
         private ScanDTOFactory $dtofactory,
         private ValidatorInterface $validator,
+        public $AI_SERVICE_URL
     ) {}
 
     /**
@@ -63,7 +64,7 @@ class ScanService
 
         $aiScanResponse = $this->http->request(
             'POST',
-            'http://bd_project_ai_service:8000/ai/scan',
+            sprintf('%s/ai/scan',  $this->AI_SERVICE_URL),
             [
                 'headers' => $formData->getPreparedHeaders()->toArray(),
                 'body' => $formData->bodyToIterable()
