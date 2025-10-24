@@ -15,6 +15,7 @@ use App\Repository\StripeEventRepository;
 use App\Repository\UserRepository;
 use JsonException;
 use DateTimeImmutable;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
@@ -218,22 +219,30 @@ class PaymentService
         $emailLog = null;
         $checkoutSession = null;
 
-        $this->entityManager->transactional(function () use ($event, $decodedPayload, &$shouldSendEmail, &$emailLog, &$checkoutSession) {
-            $stripeEvent = (new StripeEvent())
-                ->setEventId($event->id)
-                ->setType($event->type)
-                ->setPayload($decodedPayload);
+        $stripeEvent = (new StripeEvent())
+            ->setEventId($event->id)
+            ->setType($event->type)
+            ->setPayload($decodedPayload);
+
+        try {
             $this->entityManager->persist($stripeEvent);
-
-            if ($event->type === 'checkout.session.completed') {
-                $checkoutSession = $event->data->object;
-                if ($checkoutSession instanceof StripeCheckoutSession) {
-                    $shouldSendEmail = $this->processCheckoutSessionCompleted($checkoutSession, $emailLog);
-                }
-            }
-
             $this->entityManager->flush();
-        });
+        } catch (UniqueConstraintViolationException $exception) {
+            $this->logger->info('Duplicate Stripe webhook ignored (race)', [
+                'eventId' => $event->id,
+                'type' => $event->type,
+            ]);
+
+            return;
+        }
+
+        if ($event->type === 'checkout.session.completed') {
+            $checkoutSession = $event->data->object;
+            if ($checkoutSession instanceof StripeCheckoutSession) {
+                $shouldSendEmail = $this->processCheckoutSessionCompleted($checkoutSession, $emailLog);
+                $this->entityManager->flush();
+            }
+        }
 
         if ($shouldSendEmail && $checkoutSession instanceof StripeCheckoutSession && $emailLog instanceof CheckoutSessionEmail) {
             $metadataJson = $checkoutSession->metadata['items'] ?? null;
