@@ -29,6 +29,7 @@ security:
                 password_path: password
         docs:
             pattern: ^/api/doc
+            provider: app_user_provider
             http_basic: ~
             lazy: true
         api:
