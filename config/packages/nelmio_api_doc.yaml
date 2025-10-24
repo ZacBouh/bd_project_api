@@ -1,0 +1,22 @@
+nelmio_api_doc:
+    areas:
+        path_patterns:
+            - ^/api(?!/doc$)
+    documentation:
+        info:
+            title: 'BD Project API'
+            description: 'Documentation OpenAPI générée par Nelmio pour les endpoints publics de l’API.'
+            version: '1.0.0'
+        servers:
+            - url: 'https://api.example.com'
+              description: 'Production'
+            - url: 'http://localhost:8000'
+              description: 'Local'
+        components:
+            securitySchemes:
+                Bearer:
+                    type: http
+                    scheme: bearer
+                    bearerFormat: JWT
+        security:
+            - Bearer: []
