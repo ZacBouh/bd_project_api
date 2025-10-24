@@ -99,7 +99,7 @@ class CopyRepository extends ServiceEntityRepository
             return 0;
         }
 
-        $qb = $this->_em->createQueryBuilder();
+        $qb = $this->createQueryBuilder('c');
 
         return (int) $qb
             ->update(Copy::class, 'c')
