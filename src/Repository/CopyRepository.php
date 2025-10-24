@@ -100,23 +100,20 @@ class CopyRepository extends ServiceEntityRepository
         }
 
         $qb = $this->createQueryBuilder('c');
-        $qb
-            ->where('c.id IN (:ids)')
+
+        return (int) $qb
+            ->update()
+            ->set('c.forSale', ':sold')
+            ->where($qb->expr()->in('c.id', ':ids'))
             ->andWhere($qb->expr()->orX(
                 'c.forSale IS NULL',
                 'c.forSale = :forSaleTrue'
             ))
+            ->setParameter('sold', false)
+            ->setParameter('forSaleTrue', true)
             ->setParameter('ids', $copyIds)
-            ->setParameter('forSaleTrue', true);
-
-        /** @var list<Copy> $copies */
-        $copies = $qb->getQuery()->getResult();
-
-        foreach ($copies as $copy) {
-            $copy->setForSale(false);
-        }
-
-        return count($copies);
+            ->getQuery()
+            ->execute();
     }
 
     //    /**
