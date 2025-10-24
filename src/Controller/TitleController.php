@@ -3,8 +3,11 @@
 namespace App\Controller;
 
 use App\DTO\Title\TitleDTOFactory;
+use App\DTO\Title\TitleReadDTO;
 use App\Entity\Title;
 use App\Service\TitleManagerService;
+use Nelmio\ApiDocBundle\Attribute\Model;
+use OpenApi\Attributes as OA;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -33,6 +36,20 @@ final class TitleController extends AbstractController
     }
 
     #[Route('/api/titles', name: 'titles_get', methods: 'GET')]
+    #[OA\Get(
+        summary: 'Liste tous les titres disponibles',
+        tags: ['Titles'],
+        responses: [
+            new OA\Response(
+                response: Response::HTTP_OK,
+                description: 'Collection de titres',
+                content: new OA\JsonContent(
+                    type: 'array',
+                    items: new OA\Items(ref: new Model(type: TitleReadDTO::class))
+                )
+            )
+        ]
+    )]
     public function getTitles(): JsonResponse
     {
         $this->logger->critical("Received Get Titles Request");
@@ -42,6 +59,40 @@ final class TitleController extends AbstractController
     }
 
     #[Route('/api/titles/search', name: 'title_search', methods: 'GET')]
+    #[OA\Get(
+        summary: 'Recherche des titres via une requête textuelle',
+        tags: ['Titles'],
+        parameters: [
+            new OA\Parameter(
+                name: 'q',
+                description: 'Terme à rechercher',
+                in: 'query',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'limit',
+                description: 'Nombre maximum de résultats à retourner',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(type: 'integer', default: 200, minimum: 1)
+            ),
+            new OA\Parameter(
+                name: 'offset',
+                description: 'Décalage de pagination',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(type: 'integer', default: 0, minimum: 0)
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: Response::HTTP_OK,
+                description: 'Résultats paginés de la recherche',
+                content: new OA\JsonContent(type: 'array', items: new OA\Items(type: 'object'))
+            )
+        ]
+    )]
     public function searchTitle(
         Request $request,
     ): JsonResponse {
