@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use App\Entity\Trait\TimestampableTrait;
+use App\Entity\User;
+use App\Enum\OrderPaymentStatus;
 use App\Repository\OrderRepository;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -39,9 +41,13 @@ class Order
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $metadata = null;
 
+    #[ORM\Column(length: 16, enumType: OrderPaymentStatus::class)]
+    private OrderPaymentStatus $status;
+
     public function __construct()
     {
         $this->checkoutSessionId = '';
+        $this->status = OrderPaymentStatus::PENDING;
     }
 
     public function getId(): ?int
@@ -109,4 +115,15 @@ class Order
         return $this;
     }
 
+    public function getStatus(): OrderPaymentStatus
+    {
+        return $this->status;
+    }
+
+    public function setStatus(OrderPaymentStatus $status): self
+    {
+        $this->status = $status;
+
+        return $this;
+    }
 }

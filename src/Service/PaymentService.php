@@ -5,6 +5,7 @@ namespace App\Service;
 use App\Entity\CheckoutSessionEmail;
 use App\Entity\Copy;
 use App\Entity\Order;
+use App\Enum\OrderPaymentStatus;
 use App\Entity\StripeEvent;
 use App\Entity\User;
 use App\Repository\CheckoutSessionEmailRepository;
@@ -304,12 +305,15 @@ class PaymentService
         if ($order === null) {
             $order = (new Order())
                 ->setCheckoutSessionId($session->id)
-                ->setUser($user)
-                ->setAmountTotal($session->amount_total ?? null)
-                ->setCurrency($session->currency ?? null)
-                ->setMetadata($metadata);
+                ->setUser($user);
             $this->entityManager->persist($order);
         }
+
+        $order
+            ->setAmountTotal($session->amount_total ?? null)
+            ->setCurrency($session->currency ?? null)
+            ->setMetadata($metadata)
+            ->setStatus(OrderPaymentStatus::PAID);
 
         $updatedCopies = 0;
         if ($copyIds !== []) {
