@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\DTO\Title\TitleDTOFactory;
 use App\DTO\Title\TitleReadDTO;
+use App\DTO\Title\TitleWriteDTO;
 use App\Entity\Title;
 use App\Service\TitleManagerService;
 use Nelmio\ApiDocBundle\Attribute\Model;
@@ -24,6 +25,28 @@ final class TitleController extends AbstractController
     ) {}
 
     #[Route('/api/titles', name: 'titles_create', methods: 'POST')]
+    #[OA\Post(
+        summary: 'Crée un nouveau titre',
+        tags: ['Titles'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(ref: new Model(type: TitleWriteDTO::class))
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: Response::HTTP_OK,
+                description: 'Titre créé',
+                content: new OA\JsonContent(ref: new Model(type: TitleReadDTO::class))
+            ),
+            new OA\Response(
+                response: Response::HTTP_BAD_REQUEST,
+                description: 'Requête invalide ou données incomplètes'
+            )
+        ]
+    )]
     public function createTitle(
         Request $request
     ): JsonResponse {
@@ -89,7 +112,14 @@ final class TitleController extends AbstractController
             new OA\Response(
                 response: Response::HTTP_OK,
                 description: 'Résultats paginés de la recherche',
-                content: new OA\JsonContent(type: 'array', items: new OA\Items(type: 'object'))
+                content: new OA\JsonContent(
+                    type: 'array',
+                    items: new OA\Items(ref: new Model(type: TitleReadDTO::class))
+                )
+            ),
+            new OA\Response(
+                response: Response::HTTP_BAD_REQUEST,
+                description: 'Requête invalide'
             )
         ]
     )]
@@ -104,6 +134,38 @@ final class TitleController extends AbstractController
     }
 
     #[Route('/api/title', name: 'title_get', methods: 'POST')]
+    #[OA\Post(
+        summary: 'Récupère une liste de titres depuis leurs identifiants',
+        tags: ['Titles'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                required: ['titleIds'],
+                properties: [
+                    new OA\Property(
+                        property: 'titleIds',
+                        type: 'array',
+                        items: new OA\Items(type: 'integer')
+                    )
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: Response::HTTP_OK,
+                description: 'Titres correspondants',
+                content: new OA\JsonContent(
+                    type: 'array',
+                    items: new OA\Items(ref: new Model(type: TitleReadDTO::class))
+                )
+            ),
+            new OA\Response(
+                response: Response::HTTP_BAD_REQUEST,
+                description: 'Aucun identifiant fourni'
+            )
+        ]
+    )]
     public function getTitle(
         Request $request
     ): JsonResponse {
