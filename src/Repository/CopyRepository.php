@@ -90,6 +90,32 @@ class CopyRepository extends ServiceEntityRepository
         return $copies;
     }
 
+    /**
+     * @param int[] $copyIds
+     */
+    public function markAsSold(array $copyIds): int
+    {
+        if ($copyIds === []) {
+            return 0;
+        }
+
+        $qb = $this->_em->createQueryBuilder();
+
+        return (int) $qb
+            ->update(Copy::class, 'c')
+            ->set('c.forSale', ':sold')
+            ->where($qb->expr()->in('c.id', ':ids'))
+            ->andWhere($qb->expr()->orX(
+                'c.forSale IS NULL',
+                'c.forSale = :forSaleTrue'
+            ))
+            ->setParameter('sold', false)
+            ->setParameter('forSaleTrue', true)
+            ->setParameter('ids', $copyIds)
+            ->getQuery()
+            ->execute();
+    }
+
     //    /**
     //     * @return Copy[] Returns an array of Copy objects
     //     */

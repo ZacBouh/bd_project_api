@@ -26,7 +26,10 @@ class PaymentController
     ): Response {
         try {
             $this->logger->debug(sprintf("got payment request for cart : %s ", $request->getContent()));
-            $paymentUrl = $this->paymentService->getPaymentUrl($request);
+            /** @var array<string, mixed> $payload */
+            $payload = json_decode($request->getContent(), true) ?? [];
+            $requestId = $payload['requestId'] ?? null;
+            $paymentUrl = $this->paymentService->getPaymentUrl($request, is_string($requestId) ? trim($requestId) : null);
             if (is_array($paymentUrl)) {
                 return new JsonResponse(['validationErrors' => $paymentUrl], Response::HTTP_BAD_REQUEST);
             }
