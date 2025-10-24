@@ -8,6 +8,7 @@ use App\Entity\Order;
 use App\Enum\OrderPaymentStatus;
 use App\Entity\StripeEvent;
 use App\Entity\User;
+use App\Exception\CopiesNotForSaleException;
 use App\Repository\CheckoutSessionEmailRepository;
 use App\Repository\CopyRepository;
 use App\Repository\OrderRepository;
@@ -176,6 +177,13 @@ class PaymentService
         $copies = $this->copyRepo->findBy(['id' => $copyIds]);
         if (count($copies) !== count($copyIds)) {
             throw new InvalidArgumentException("Invalid Copy list, none or some where not found");
+        }
+        $notForSaleIds = $this->copyRepo->findNotForSaleIds($copyIds);
+        if ($notForSaleIds !== []) {
+            $this->logger->warning('Copies requested for checkout are not for sale', [
+                'copyIds' => $notForSaleIds,
+            ]);
+            throw new CopiesNotForSaleException($notForSaleIds);
         }
         $url = $this->createStripeCheckoutSession($copies, $requestId);
         return $url;

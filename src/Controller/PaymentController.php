@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Exception\CopiesNotForSaleException;
 use App\Service\PaymentService;
 use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
@@ -34,8 +35,16 @@ class PaymentController
                 return new JsonResponse(['validationErrors' => $paymentUrl], Response::HTTP_BAD_REQUEST);
             }
             return new JsonResponse(['url' => $paymentUrl], Response::HTTP_OK);
+        } catch (CopiesNotForSaleException $exception) {
+            return new JsonResponse(
+                [
+                    'error' => 'Some items are no longer available for sale.',
+                    'unavailableCopyIds' => $exception->getCopyIds(),
+                ],
+                Response::HTTP_CONFLICT
+            );
         } catch (InvalidArgumentException $e) {
-            return new JsonResponse(['error' => $e->getMessage()]);
+            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
     }
 

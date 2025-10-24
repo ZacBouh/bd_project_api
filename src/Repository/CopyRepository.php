@@ -116,6 +116,33 @@ class CopyRepository extends ServiceEntityRepository
             ->execute();
     }
 
+    /**
+     * @param int[] $copyIds
+     * @return int[]
+     */
+    public function findNotForSaleIds(array $copyIds): array
+    {
+        if ($copyIds === []) {
+            return [];
+        }
+
+        $qb = $this->createQueryBuilder('c');
+
+        $results = $qb
+            ->select('c.id')
+            ->where($qb->expr()->in('c.id', ':ids'))
+            ->andWhere('c.forSale = :forSaleFalse')
+            ->setParameter('ids', $copyIds)
+            ->setParameter('forSaleFalse', false)
+            ->getQuery()
+            ->getScalarResult();
+
+        return array_map(
+            static fn (array $row): int => (int) array_values($row)[0],
+            $results
+        );
+    }
+
     //    /**
     //     * @return Copy[] Returns an array of Copy objects
     //     */
