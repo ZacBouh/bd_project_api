@@ -7,7 +7,7 @@ use App\DTO\Artist\ArtistReadDTO;
 use App\Repository\ArtistRepository;
 use App\Repository\SkillRepository;
 use App\Service\ArtistManagerService;
-use Nelmio\ApiDocBundle\Annotation\Model;
+use Nelmio\ApiDocBundle\Model\Model;
 use OpenApi\Attributes as OA;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;

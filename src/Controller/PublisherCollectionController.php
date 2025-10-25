@@ -5,7 +5,7 @@ namespace App\Controller;
 use App\DTO\PublisherCollection\PublisherCollectionDTOFactory;
 use App\DTO\PublisherCollection\PublisherCollectionReadDTO;
 use App\Service\PublisherCollectionService;
-use Nelmio\ApiDocBundle\Annotation\Model;
+use Nelmio\ApiDocBundle\Model\Model;
 use OpenApi\Attributes as OA;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;

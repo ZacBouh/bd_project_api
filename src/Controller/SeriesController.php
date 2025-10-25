@@ -5,7 +5,7 @@ namespace App\Controller;
 use App\DTO\Series\SeriesDTOFactory;
 use App\DTO\Series\SeriesReadDTO;
 use App\Service\SeriesManagerService;
-use Nelmio\ApiDocBundle\Annotation\Model;
+use Nelmio\ApiDocBundle\Model\Model;
 use OpenApi\Attributes as OA;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
