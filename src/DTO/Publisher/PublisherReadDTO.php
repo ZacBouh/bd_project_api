@@ -4,7 +4,7 @@ namespace App\DTO\Publisher;
 
 use App\DTO\Title\TitleReadDTO;
 use App\DTO\UploadedImage\UploadedImageReadDTO;
-use Nelmio\ApiDocBundle\Attribute\Model;
+use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Attributes as OA;
 
 #[OA\Schema(description: 'Informations publiques d’un éditeur.')] 
