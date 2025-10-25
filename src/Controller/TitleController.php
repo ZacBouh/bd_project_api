@@ -15,6 +15,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Validator\Exception\ValidationFailedException;
 
 final class TitleController extends AbstractController
 {
@@ -43,7 +44,26 @@ final class TitleController extends AbstractController
             ),
             new OA\Response(
                 response: Response::HTTP_BAD_REQUEST,
-                description: 'Requête invalide ou données incomplètes'
+                description: 'Requête invalide ou données incomplètes',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    properties: [
+                        new OA\Property(
+                            property: 'message',
+                            type: 'string',
+                            example: 'Validation failed'
+                        ),
+                        new OA\Property(
+                            property: 'errors',
+                            type: 'object',
+                            additionalProperties: new OA\Schema(
+                                type: 'array',
+                                items: new OA\Items(type: 'string')
+                            ),
+                            example: ['isbn' => ['The provided isbn is not in a valid format']]
+                        ),
+                    ]
+                )
             )
         ]
     )]
@@ -51,7 +71,22 @@ final class TitleController extends AbstractController
         Request $request
     ): JsonResponse {
         $this->logger->warning("Received Create Title Request");
-        $newTitle = $this->titleManagerService->createTitle($request->request, $request->files);
+        try {
+            $newTitle = $this->titleManagerService->createTitle($request->request, $request->files);
+        } catch (ValidationFailedException $exception) {
+            $this->logger->warning('Title creation failed due to validation error', ['errors' => (string) $exception]);
+
+            $errors = [];
+            foreach ($exception->getViolations() as $violation) {
+                $propertyPath = $violation->getPropertyPath() !== '' ? $violation->getPropertyPath() : 'general';
+                $errors[$propertyPath][] = $violation->getMessage();
+            }
+
+            return $this->json([
+                'message' => 'Validation failed',
+                'errors' => $errors,
+            ], Response::HTTP_BAD_REQUEST);
+        }
 
         $dto = $this->dtoFactory->readDTOFromEntity($newTitle);
 

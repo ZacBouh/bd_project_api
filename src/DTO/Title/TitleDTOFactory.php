@@ -34,6 +34,8 @@ class TitleDTOFactory extends AbstractDTOFactory
         /** @var array{artist: int, skills: string[]} $artistsContributions */
         //@phpstan-ignore-next-line
         $artistsContributions = array_map(fn($contribution) => ['artist' => (int) $contribution['artist'], 'skills' => $contribution['skills']], $i->all('artistsContributions'));
+        $isbn = trim($i->getString('isbn'));
+
         $dto = new TitleWriteDTO(
             $i->getString('name'),
             $i->getInt('publisher'),
@@ -44,7 +46,7 @@ class TitleDTOFactory extends AbstractDTOFactory
             $artistsContributions, //@phpstan-ignore-line
             $i->getString('releaseDate') !== '' ? $i->getString('releaseDate') : null,
             $this->getUploadedImagesFiles($f),
-            $i->getString('isbn') !== '' ? $i->getString('isbn') : null
+            $isbn !== '' ? $isbn : null
         );
         return $dto;
     }
