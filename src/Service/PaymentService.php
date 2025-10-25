@@ -5,10 +5,16 @@ namespace App\Service;
 use App\Entity\CheckoutSessionEmail;
 use App\Entity\Copy;
 use App\Entity\Order;
+use App\Entity\OrderItem;
+use App\Entity\PayoutTask;
 use App\Enum\OrderPaymentStatus;
 use App\Entity\StripeEvent;
 use App\Entity\User;
 use App\Exception\CopiesNotForSaleException;
+use App\Enum\OrderItemStatus;
+use App\Enum\PayoutTaskStatus;
+use App\Enum\PriceCurrency;
+use App\Service\MailerService;
 use App\Repository\CheckoutSessionEmailRepository;
 use App\Repository\CopyRepository;
 use App\Repository\OrderRepository;
@@ -30,6 +36,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\ConstraintViolationInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Throwable;
 use UnexpectedValueException;
 
 class PaymentService
@@ -60,11 +67,11 @@ class PaymentService
         $copyIds = [];
         foreach ($copies as $copy) {
             $copyIds[] = (int) $copy->getId();
-            $price = $copy->getPrice() ?? 0.0;
+            $price = $copy->getPrice() ?? 0;
             $items[] = [
                 'price_data' => [
                     'currency' => 'eur',
-                    'unit_amount' => (int) round($price * 100),
+                    'unit_amount' => $price,
                     'product_data' => [
                         'name' => $copy->getTitle()?->getName()
                     ]
@@ -318,19 +325,75 @@ class PaymentService
             }
         }
 
-        $order = $this->orderRepository->findOneByCheckoutSessionId($session->id);
+        $copies = [];
+        if ($copyIds !== []) {
+            /** @var Copy[] $copies */
+            $copies = $this->copyRepo->findBy(['id' => $copyIds]);
+        }
+        $copiesById = [];
+        foreach ($copies as $copy) {
+            $copyId = $copy->getId();
+            if ($copyId !== null) {
+                $copiesById[$copyId] = $copy;
+            }
+        }
+
+        $order = $this->orderRepository->findOneByStripeCheckoutSessionId($session->id);
         if ($order === null) {
             $order = (new Order())
-                ->setCheckoutSessionId($session->id)
+                ->setStripeCheckoutSessionId($session->id)
+                ->setOrderRef($this->generateUniqueOrderRef())
                 ->setUser($user);
             $this->entityManager->persist($order);
+        } elseif ($order->getOrderRef() === '') {
+            $order->setOrderRef($this->generateUniqueOrderRef());
+        }
+
+        if (is_array($metadata)) {
+            $metadata['orderRef'] = $order->getOrderRef();
         }
 
         $order
-            ->setAmountTotal($session->amount_total ?? null)
-            ->setCurrency($session->currency ?? null)
+            ->setAmountTotal($session->amount_total !== null ? (int) $session->amount_total : null)
+            ->setCurrency($this->mapCurrency($session->currency))
             ->setMetadata($metadata)
-            ->setStatus(OrderPaymentStatus::PAID);
+            ->setStatus(OrderPaymentStatus::PAID_PENDING_HANDOVER);
+
+        $existingItemsByCopyId = [];
+        foreach ($order->getItems() as $existingItem) {
+            $copy = $existingItem->getCopy();
+            $copyId = $copy?->getId();
+            if ($copyId !== null) {
+                $existingItemsByCopyId[$copyId] = true;
+            }
+        }
+
+        foreach ($copyIds as $copyId) {
+            $copy = $copiesById[$copyId] ?? null;
+            if ($copy === null) {
+                $this->logger->warning('Unable to attach copy to order item because it could not be loaded', [
+                    'copyId' => $copyId,
+                    'sessionId' => $session->id,
+                ]);
+                continue;
+            }
+
+            if (isset($existingItemsByCopyId[$copyId])) {
+                continue;
+            }
+
+            $price = $copy->getPrice() ?? 0;
+            $currency = $copy->getCurrency() ?? $this->mapCurrency($session->currency) ?? PriceCurrency::EURO;
+
+            $orderItem = (new OrderItem())
+                ->setCopy($copy)
+                ->setSeller($copy->getOwner())
+                ->setPrice($price)
+                ->setCurrency($currency)
+                ->setStatus(OrderItemStatus::PENDING_HANDOVER);
+
+            $order->addItem($orderItem);
+        }
 
         $updatedCopies = 0;
         if ($copyIds !== []) {
@@ -342,6 +405,8 @@ class PaymentService
             'copyIds' => $copyIds,
         ]);
 
+        $this->initializePayoutTasks($order);
+
         if (!$this->checkoutSessionEmailRepository->existsForSession($session->id)) {
             $emailLog = (new CheckoutSessionEmail())
                 ->setSessionId($session->id);
@@ -351,5 +416,84 @@ class PaymentService
         }
 
         return false;
+    }
+
+    private function mapCurrency(?string $currency): ?PriceCurrency
+    {
+        if ($currency === null) {
+            return null;
+        }
+
+        return match (strtolower($currency)) {
+            'eur', 'euro' => PriceCurrency::EURO,
+            default => null,
+        };
+    }
+
+    private function initializePayoutTasks(Order $order): void
+    {
+        $existingSellerIds = [];
+        foreach ($order->getPayoutTasks() as $task) {
+            $sellerId = $task->getSeller()?->getId();
+            if ($sellerId !== null) {
+                $existingSellerIds[$sellerId] = true;
+            }
+        }
+
+        $amountBySeller = [];
+        foreach ($order->getItems() as $item) {
+            $seller = $item->getSeller();
+            $sellerId = $seller?->getId();
+            if ($seller === null || $sellerId === null) {
+                continue;
+            }
+
+            if (!isset($amountBySeller[$sellerId])) {
+                $amountBySeller[$sellerId] = [
+                    'seller' => $seller,
+                    'amount' => 0,
+                    'currency' => $item->getCurrency(),
+                ];
+            }
+
+            $amountBySeller[$sellerId]['amount'] += $item->getPrice();
+        }
+
+        foreach ($amountBySeller as $sellerId => $data) {
+            if (isset($existingSellerIds[$sellerId])) {
+                continue;
+            }
+
+            $currency = $data['currency'] ?? $order->getCurrency() ?? PriceCurrency::EURO;
+
+            $task = (new PayoutTask())
+                ->setSeller($data['seller'])
+                ->setAmount((int) $data['amount'])
+                ->setCurrency($currency)
+                ->setStatus(PayoutTaskStatus::PENDING_PAYMENT_INFORMATION);
+
+            $order->addPayoutTask($task);
+        }
+    }
+
+    private function generateUniqueOrderRef(): string
+    {
+        $attempts = 0;
+
+        do {
+            if ($attempts++ >= 10) {
+                throw new RuntimeException('Unable to generate a unique order reference');
+            }
+
+            try {
+                $random = strtoupper(substr(bin2hex(random_bytes(5)), 0, 6));
+            } catch (Throwable $exception) {
+                throw new RuntimeException('Unable to generate order reference', 0, $exception);
+            }
+
+            $reference = sprintf('o_%s', $random);
+        } while ($this->orderRepository->findOneBy(['orderRef' => $reference]) !== null);
+
+        return $reference;
     }
 }

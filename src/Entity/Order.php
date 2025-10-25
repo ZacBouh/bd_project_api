@@ -7,7 +7,12 @@ namespace App\Entity;
 use App\Entity\Trait\TimestampableTrait;
 use App\Entity\User;
 use App\Enum\OrderPaymentStatus;
+use App\Enum\PriceCurrency;
 use App\Repository\OrderRepository;
+use App\Entity\OrderItem;
+use App\Entity\PayoutTask;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: OrderRepository::class)]
@@ -26,17 +31,17 @@ class Order
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?User $user = null;
 
-    #[ORM\Column(length: 255, unique: true)]
-    private string $checkoutSessionId = '';
+    #[ORM\Column(length: 32, unique: true)]
+    private string $orderRef = '';
 
-    /**
-     * Amount in the smallest currency unit (eg. cents).
-     */
+    #[ORM\Column(length: 255, unique: true)]
+    private string $stripeCheckoutSessionId = '';
+
     #[ORM\Column(type: 'integer', nullable: true)]
     private ?int $amountTotal = null;
 
-    #[ORM\Column(length: 16, nullable: true)]
-    private ?string $currency = null;
+    #[ORM\Column(nullable: true, enumType: PriceCurrency::class)]
+    private ?PriceCurrency $currency = null;
 
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $metadata = null;
@@ -44,10 +49,21 @@ class Order
     #[ORM\Column(length: 16, enumType: OrderPaymentStatus::class)]
     private OrderPaymentStatus $status;
 
+    /** @var Collection<int, OrderItem> */
+    #[ORM\OneToMany(mappedBy: 'order', targetEntity: OrderItem::class, cascade: ['persist'], orphanRemoval: true)]
+    private Collection $items;
+
+    /** @var Collection<int, PayoutTask> */
+    #[ORM\OneToMany(mappedBy: 'order', targetEntity: PayoutTask::class, cascade: ['persist'], orphanRemoval: true)]
+    private Collection $payoutTasks;
+
     public function __construct()
     {
-        $this->checkoutSessionId = '';
+        $this->orderRef = '';
+        $this->stripeCheckoutSessionId = '';
         $this->status = OrderPaymentStatus::PENDING;
+        $this->items = new ArrayCollection();
+        $this->payoutTasks = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -67,14 +83,26 @@ class Order
         return $this;
     }
 
-    public function getCheckoutSessionId(): string
+    public function getOrderRef(): string
     {
-        return $this->checkoutSessionId;
+        return $this->orderRef;
     }
 
-    public function setCheckoutSessionId(string $checkoutSessionId): self
+    public function setOrderRef(string $orderRef): self
     {
-        $this->checkoutSessionId = $checkoutSessionId;
+        $this->orderRef = $orderRef;
+
+        return $this;
+    }
+
+    public function getStripeCheckoutSessionId(): string
+    {
+        return $this->stripeCheckoutSessionId;
+    }
+
+    public function setStripeCheckoutSessionId(string $stripeCheckoutSessionId): self
+    {
+        $this->stripeCheckoutSessionId = $stripeCheckoutSessionId;
 
         return $this;
     }
@@ -91,12 +119,12 @@ class Order
         return $this;
     }
 
-    public function getCurrency(): ?string
+    public function getCurrency(): ?PriceCurrency
     {
         return $this->currency;
     }
 
-    public function setCurrency(?string $currency): self
+    public function setCurrency(?PriceCurrency $currency): self
     {
         $this->currency = $currency;
 
@@ -123,6 +151,64 @@ class Order
     public function setStatus(OrderPaymentStatus $status): self
     {
         $this->status = $status;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, OrderItem>
+     */
+    public function getItems(): Collection
+    {
+        return $this->items;
+    }
+
+    public function addItem(OrderItem $item): self
+    {
+        if (!$this->items->contains($item)) {
+            $this->items->add($item);
+            $item->setOrder($this);
+        }
+
+        return $this;
+    }
+
+    public function removeItem(OrderItem $item): self
+    {
+        if ($this->items->removeElement($item)) {
+            if ($item->getOrder() === $this) {
+                $item->setOrder(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PayoutTask>
+     */
+    public function getPayoutTasks(): Collection
+    {
+        return $this->payoutTasks;
+    }
+
+    public function addPayoutTask(PayoutTask $payoutTask): self
+    {
+        if (!$this->payoutTasks->contains($payoutTask)) {
+            $this->payoutTasks->add($payoutTask);
+            $payoutTask->setOrder($this);
+        }
+
+        return $this;
+    }
+
+    public function removePayoutTask(PayoutTask $payoutTask): self
+    {
+        if ($this->payoutTasks->removeElement($payoutTask)) {
+            if ($payoutTask->getOrder() === $this) {
+                $payoutTask->setOrder(null);
+            }
+        }
 
         return $this;
     }

@@ -199,6 +199,33 @@ abstract class AbstractDTOFactory implements ServiceSubscriberInterface
         return (float) $value;
     }
 
+    protected function getInt(InputBag $inputBag, string $key, ?int $default = null): ?int
+    {
+        $value = $inputBag->get($key);
+        if ($value === null) {
+            return $default;
+        }
+
+        if (!is_int($value) && !is_string($value) && !is_float($value)) {
+            return $default;
+        }
+
+        if (is_int($value)) {
+            return $value;
+        }
+
+        $normalized = is_string($value) ? str_replace(',', '.', trim($value)) : (string) $value;
+        if (!is_numeric($normalized)) {
+            return $default;
+        }
+
+        $floatValue = (float) $normalized;
+
+        $isMajorUnit = \str_contains($normalized, '.') || (is_float($value) && abs($floatValue - round($floatValue)) > 0.00001);
+
+        return $isMajorUnit ? (int) round($floatValue * 100) : (int) round($floatValue);
+    }
+
     /**
      * @param InputBag<scalar> $inputBag
      * @param array<mixed> $default

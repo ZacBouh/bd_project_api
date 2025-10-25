@@ -40,16 +40,16 @@ class Copy implements HasUploadedImagesInterface
     private CopyCondition $copyCondition;
 
     // #[Groups(['copy:read'])]
-    #[ORM\Column(nullable: true)]
-    private ?float $price = null;
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $price = null;
 
     // #[Groups(['copy:read'])]
     #[ORM\Column(nullable: true, enumType: PriceCurrency::class)]
     private ?PriceCurrency $currency = null;
 
     // #[Groups(['copy:read'])]
-    #[ORM\Column(nullable: true)]
-    private ?float $boughtForPrice = null;
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $boughtForPrice = null;
 
     // #[Groups(['copy:read'])]
     #[ORM\Column(nullable: true, enumType: PriceCurrency::class)]
@@ -113,12 +113,12 @@ class Copy implements HasUploadedImagesInterface
         return $this;
     }
 
-    public function getPrice(): ?float
+    public function getPrice(): ?int
     {
         return $this->price;
     }
 
-    public function setPrice(?float $price): static
+    public function setPrice(?int $price): static
     {
         $this->price = $price;
 
@@ -137,12 +137,12 @@ class Copy implements HasUploadedImagesInterface
         return $this;
     }
 
-    public function getBoughtForPrice(): ?float
+    public function getBoughtForPrice(): ?int
     {
         return $this->boughtForPrice;
     }
 
-    public function setBoughtForPrice(?float $boughtForPrice): static
+    public function setBoughtForPrice(?int $boughtForPrice): static
     {
         $this->boughtForPrice = $boughtForPrice;
 

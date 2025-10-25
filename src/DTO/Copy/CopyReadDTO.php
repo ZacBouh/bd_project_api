@@ -49,14 +49,14 @@ class CopyReadDTO
         #[OA\Property(format: 'date-time')]
         public string $updatedAt,
 
-        #[OA\Property(nullable: true, example: 12.5)]
-        public ?float $price,
+        #[OA\Property(nullable: true, example: 1250, description: 'Prix en centimes.')]
+        public ?int $price,
 
         #[OA\Property(nullable: true, example: 'EUR')]
         public ?string $currency,
 
-        #[OA\Property(nullable: true, example: 9.99)]
-        public ?float $boughtForPrice,
+        #[OA\Property(nullable: true, example: 999, description: 'Prix d\'achat en centimes.')]
+        public ?int $boughtForPrice,
 
         #[OA\Property(nullable: true, example: 'USD')]
         public ?string $boughtForCurrency,

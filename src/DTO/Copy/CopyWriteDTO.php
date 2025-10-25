@@ -19,10 +19,10 @@ class CopyWriteDTO
         #[Assert\Positive]
         public ?int $id,
         #[Assert\Positive]
-        public ?float $price,
+        public ?int $price,
         public ?PriceCurrency $currency,
         #[Assert\Positive]
-        public ?float $boughtForPrice,
+        public ?int $boughtForPrice,
         public ?PriceCurrency $boughtForCurrency,
 
         #[Assert\Image(
