@@ -65,7 +65,7 @@ class Title implements HasUploadedImagesInterface
         return $this->isbn;
     }
 
-    public function setIsbn(string $isbn): static
+    public function setIsbn(?string $isbn): static
     {
         $this->isbn = $isbn;
         return $this;
