@@ -56,9 +56,11 @@ final class TitleController extends AbstractController
                         new OA\Property(
                             property: 'errors',
                             type: 'object',
-                            additionalProperties: new OA\Schema(
-                                type: 'array',
-                                items: new OA\Items(type: 'string')
+                            additionalProperties: new OA\AdditionalProperties(
+                                new OA\Schema(
+                                    type: 'array',
+                                    items: new OA\Items(type: 'string')
+                                )
                             ),
                             example: ['isbn' => ['The provided isbn is not in a valid format']]
                         ),
