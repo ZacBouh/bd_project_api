@@ -46,7 +46,7 @@ class Order
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $metadata = null;
 
-    #[ORM\Column(length: 16, enumType: OrderPaymentStatus::class)]
+    #[ORM\Column(length: 32, enumType: OrderPaymentStatus::class)]
     private OrderPaymentStatus $status;
 
     /** @var Collection<int, OrderItem> */

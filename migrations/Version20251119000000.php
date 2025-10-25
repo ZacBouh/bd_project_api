@@ -20,7 +20,7 @@ final class Version20251119000000 extends AbstractMigration
         $this->addSql('ALTER TABLE orders DROP INDEX UNIQ_E52FFDE161112094');
         $this->addSql('ALTER TABLE orders CHANGE checkout_session_id stripe_checkout_session_id VARCHAR(255) NOT NULL');
         $this->addSql('CREATE UNIQUE INDEX UNIQ_E52FFDE1B8E1ACF9 ON orders (stripe_checkout_session_id)');
-        $this->addSql('ALTER TABLE orders CHANGE amount_total amount_total INT DEFAULT NULL, CHANGE currency currency VARCHAR(255) DEFAULT NULL');
+        $this->addSql('ALTER TABLE orders CHANGE amount_total amount_total INT DEFAULT NULL, CHANGE currency currency VARCHAR(255) DEFAULT NULL, CHANGE status status VARCHAR(32) NOT NULL');
         $this->addSql("UPDATE orders SET order_ref = CONCAT('o_', LPAD(id, 6, '0')) WHERE order_ref IS NULL OR order_ref = ''");
         $this->addSql('ALTER TABLE orders MODIFY order_ref VARCHAR(32) NOT NULL');
         $this->addSql('CREATE UNIQUE INDEX UNIQ_E52FFDE1D9F01F37 ON orders (order_ref)');
@@ -51,7 +51,7 @@ final class Version20251119000000 extends AbstractMigration
         $this->addSql('DROP INDEX UNIQ_E52FFDE1D9F01F37 ON orders');
         $this->addSql('DROP INDEX UNIQ_E52FFDE1B8E1ACF9 ON orders');
         $this->addSql('ALTER TABLE orders DROP order_ref');
-        $this->addSql('ALTER TABLE orders CHANGE amount_total amount_total DOUBLE PRECISION DEFAULT NULL, CHANGE currency currency VARCHAR(16) DEFAULT NULL');
+        $this->addSql("ALTER TABLE orders CHANGE amount_total amount_total DOUBLE PRECISION DEFAULT NULL, CHANGE currency currency VARCHAR(16) DEFAULT NULL, CHANGE status status VARCHAR(16) NOT NULL DEFAULT 'PENDING'");
         $this->addSql('ALTER TABLE copy CHANGE price price DOUBLE PRECISION DEFAULT NULL, CHANGE bought_for_price bought_for_price DOUBLE PRECISION DEFAULT NULL');
         $this->addSql('ALTER TABLE orders CHANGE stripe_checkout_session_id checkout_session_id VARCHAR(255) NOT NULL');
         $this->addSql('CREATE UNIQUE INDEX UNIQ_E52FFDE161112094 ON orders (checkout_session_id)');
