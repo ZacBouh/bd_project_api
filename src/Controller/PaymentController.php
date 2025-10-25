@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Exception\CopiesNotForSaleException;
 use App\Service\PaymentService;
 use InvalidArgumentException;
+use OpenApi\Attributes as OA;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -22,6 +23,76 @@ class PaymentController
 
     /** @return RedirectResponse|JsonResponse */
     #[Route('/api/payment', name: 'payment_get_url', methods: 'POST')]
+    #[OA\Post(
+        summary: 'Créer une session de paiement Stripe',
+        tags: ['Payments'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['copies'],
+                properties: [
+                    new OA\Property(
+                        property: 'copies',
+                        type: 'array',
+                        items: new OA\Items(type: 'integer'),
+                        description: 'Identifiants des exemplaires à payer.'
+                    ),
+                    new OA\Property(
+                        property: 'requestId',
+                        type: 'string',
+                        nullable: true,
+                        description: 'Identifiant idempotent optionnel fourni par le client.'
+                    )
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: Response::HTTP_OK,
+                description: 'URL de paiement générée.',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'url', type: 'string', format: 'uri')
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: Response::HTTP_BAD_REQUEST,
+                description: 'Erreurs de validation.',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'validationErrors',
+                            type: 'array',
+                            items: new OA\Items(
+                                type: 'object',
+                                properties: [
+                                    new OA\Property(property: 'field', type: 'string'),
+                                    new OA\Property(property: 'message', type: 'string'),
+                                ]
+                            )
+                        ),
+                        new OA\Property(property: 'error', type: 'string')
+                    ],
+                    nullable: true
+                )
+            ),
+            new OA\Response(
+                response: Response::HTTP_CONFLICT,
+                description: 'Certains exemplaires ne sont plus disponibles.',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'error', type: 'string'),
+                        new OA\Property(
+                            property: 'unavailableCopyIds',
+                            type: 'array',
+                            items: new OA\Items(type: 'integer')
+                        )
+                    ]
+                )
+            )
+        ]
+    )]
     public function createStripeCheckoutSession(
         Request $request
     ): Response {
@@ -49,6 +120,15 @@ class PaymentController
     }
 
     #[Route('/api/payment/stripe-webhook', name: 'payment_stripe_webhook', methods: 'POST')]
+    #[OA\Post(
+        summary: 'Webhook Stripe',
+        description: 'Point d’entrée recevant les évènements Stripe Checkout.',
+        tags: ['Payments'],
+        requestBody: new OA\RequestBody(required: true),
+        responses: [
+            new OA\Response(response: Response::HTTP_OK, description: 'Évènement traité.')
+        ]
+    )]
     public function stripeEventWebhook(
         Request $request
     ): Response {

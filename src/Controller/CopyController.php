@@ -3,8 +3,11 @@
 namespace App\Controller;
 
 use App\DTO\Copy\CopyDTOFactory;
+use App\DTO\Copy\CopyReadDTO;
 use App\Service\CopyManagerService;
 use InvalidArgumentException;
+use Nelmio\ApiDocBundle\Annotation\Model;
+use OpenApi\Attributes as OA;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
@@ -22,6 +25,45 @@ final class CopyController extends AbstractController
     ) {}
 
     #[Route('/api/copy', name: 'copy_create', methods: 'POST')]
+    #[OA\Post(
+        summary: 'Créer un exemplaire',
+        tags: ['Copies'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['ownerId', 'titleId', 'copyCondition'],
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', nullable: true),
+                        new OA\Property(property: 'ownerId', type: 'integer'),
+                        new OA\Property(property: 'titleId', type: 'integer'),
+                        new OA\Property(property: 'copyCondition', type: 'string', description: 'Valeur de l’énumération CopyCondition.'),
+                        new OA\Property(property: 'price', type: 'number', format: 'float', nullable: true),
+                        new OA\Property(property: 'currency', type: 'string', nullable: true, description: 'Code devise PriceCurrency.'),
+                        new OA\Property(property: 'boughtForPrice', type: 'number', format: 'float', nullable: true),
+                        new OA\Property(property: 'boughtForCurrency', type: 'string', nullable: true, description: 'Code devise PriceCurrency.'),
+                        new OA\Property(property: 'forSale', type: 'boolean', nullable: true),
+                        new OA\Property(property: 'coverImageFile', type: 'string', format: 'binary', nullable: true),
+                        new OA\Property(
+                            property: 'uploadedImages',
+                            type: 'array',
+                            items: new OA\Items(type: 'string', format: 'binary'),
+                            nullable: true
+                        ),
+                    ]
+                )
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: Response::HTTP_OK,
+                description: 'Exemplaire créé.',
+                content: new OA\JsonContent(ref: new Model(type: CopyReadDTO::class))
+            ),
+            new OA\Response(response: Response::HTTP_BAD_REQUEST, description: 'Requête invalide.')
+        ]
+    )]
     public function createCopy(
         Request $request,
     ): JsonResponse {
@@ -33,6 +75,20 @@ final class CopyController extends AbstractController
     }
 
     #[Route('/api/copy', name: 'copy_get', methods: 'GET')]
+    #[OA\Get(
+        summary: 'Lister les exemplaires',
+        tags: ['Copies'],
+        responses: [
+            new OA\Response(
+                response: Response::HTTP_OK,
+                description: 'Liste de tous les exemplaires.',
+                content: new OA\JsonContent(
+                    type: 'array',
+                    items: new OA\Items(ref: new Model(type: CopyReadDTO::class))
+                )
+            )
+        ]
+    )]
     public function getCopies(
         Request $request,
     ): JsonResponse {
@@ -44,6 +100,32 @@ final class CopyController extends AbstractController
     }
 
     #[Route('/api/copy', name: 'copy_remove', methods: 'DELETE')]
+    #[OA\Delete(
+        summary: 'Supprimer un exemplaire',
+        tags: ['Copies'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['id'],
+                properties: [
+                    new OA\Property(property: 'id', type: 'integer', description: 'Identifiant de l’exemplaire à supprimer.')
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: Response::HTTP_OK,
+                description: 'Exemplaire supprimé.',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string')
+                    ]
+                )
+            ),
+            new OA\Response(response: Response::HTTP_BAD_REQUEST, description: 'Requête invalide.'),
+            new OA\Response(response: Response::HTTP_INTERNAL_SERVER_ERROR, description: 'Erreur lors de la suppression.')
+        ]
+    )]
     public function removeCopy(
         Request $request
     ): JsonResponse {
@@ -64,6 +146,45 @@ final class CopyController extends AbstractController
     }
 
     #[Route('/api/copy/update', name: 'copy_update', methods: 'POST')]
+    #[OA\Post(
+        summary: 'Mettre à jour un exemplaire',
+        tags: ['Copies'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['id'],
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer'),
+                        new OA\Property(property: 'ownerId', type: 'integer', nullable: true),
+                        new OA\Property(property: 'titleId', type: 'integer', nullable: true),
+                        new OA\Property(property: 'copyCondition', type: 'string', nullable: true),
+                        new OA\Property(property: 'price', type: 'number', format: 'float', nullable: true),
+                        new OA\Property(property: 'currency', type: 'string', nullable: true),
+                        new OA\Property(property: 'boughtForPrice', type: 'number', format: 'float', nullable: true),
+                        new OA\Property(property: 'boughtForCurrency', type: 'string', nullable: true),
+                        new OA\Property(property: 'forSale', type: 'boolean', nullable: true),
+                        new OA\Property(property: 'coverImageFile', type: 'string', format: 'binary', nullable: true),
+                        new OA\Property(
+                            property: 'uploadedImages',
+                            type: 'array',
+                            items: new OA\Items(type: 'string', format: 'binary'),
+                            nullable: true
+                        ),
+                    ]
+                )
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: Response::HTTP_OK,
+                description: 'Exemplaire mis à jour.',
+                content: new OA\JsonContent(ref: new Model(type: CopyReadDTO::class))
+            ),
+            new OA\Response(response: Response::HTTP_BAD_REQUEST, description: 'Requête invalide.')
+        ]
+    )]
     public function updateCopy(
         Request $request
     ): JsonResponse {
@@ -73,6 +194,27 @@ final class CopyController extends AbstractController
     }
 
     #[Route('/api/copy/search', name: 'copy_search', methods: 'GET')]
+    #[OA\Get(
+        summary: 'Rechercher des exemplaires',
+        tags: ['Copies'],
+        parameters: [
+            new OA\Parameter(name: 'query', in: 'query', required: true, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'limit', in: 'query', schema: new OA\Schema(type: 'integer', default: 200, minimum: 1)),
+            new OA\Parameter(name: 'offset', in: 'query', schema: new OA\Schema(type: 'integer', default: 0, minimum: 0)),
+            new OA\Parameter(name: 'forSale', in: 'query', schema: new OA\Schema(type: 'boolean')),
+        ],
+        responses: [
+            new OA\Response(
+                response: Response::HTTP_OK,
+                description: 'Résultats de la recherche.',
+                content: new OA\JsonContent(
+                    type: 'array',
+                    items: new OA\Items(ref: new Model(type: CopyReadDTO::class))
+                )
+            ),
+            new OA\Response(response: Response::HTTP_BAD_REQUEST, description: 'Paramètres de recherche invalides.')
+        ]
+    )]
     public function searchCopy(
         Request $request
     ): JsonResponse {
