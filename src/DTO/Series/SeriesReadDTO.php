@@ -4,7 +4,7 @@ namespace App\DTO\Series;
 
 use App\DTO\UploadedImage\UploadedImageReadDTO;
 use App\Entity\Trait\HasDefaultNormalizeCallback;
-use Nelmio\ApiDocBundle\Model\Model;
+use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 
 /**

@@ -6,7 +6,7 @@ use App\DTO\Publisher\PublisherDTOFactory;
 use App\DTO\Publisher\PublisherReadDTO;
 use App\Entity\Publisher;
 use App\Service\PublisherManagerService;
-use Nelmio\ApiDocBundle\Model\Model;
+use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;

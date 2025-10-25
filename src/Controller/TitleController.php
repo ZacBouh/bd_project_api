@@ -7,7 +7,7 @@ use App\DTO\Title\TitleReadDTO;
 use App\DTO\Title\TitleWriteDTO;
 use App\Entity\Title;
 use App\Service\TitleManagerService;
-use Nelmio\ApiDocBundle\Model\Model;
+use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
