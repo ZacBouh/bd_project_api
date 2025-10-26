@@ -125,4 +125,23 @@ class UserManagerService
         }
         $this->entityManager->flush();
     }
+
+    /**
+     * @return list<User>
+     */
+    public function getAllUsers(): array
+    {
+        if (!$this->security->isGranted(Role::ADMIN->value)) {
+            throw new AccessDeniedException('Only administrators can list every user');
+        }
+
+        $queryBuilder = $this->userRepository->createQueryBuilder('user')
+            ->andWhere('user.deletedAt IS NULL')
+            ->orderBy('user.id', 'ASC');
+
+        /** @var list<User> $users */
+        $users = $queryBuilder->getQuery()->getResult();
+
+        return $users;
+    }
 }

@@ -29,6 +29,35 @@ final class UserController extends AbstractController
         private UserDTOFactory $dtoFactory,
     ) {}
 
+    #[Route('/api/users', name: 'users_list', methods: 'GET')]
+    #[OA\Get(
+        summary: 'Récupérer la liste de tous les utilisateurs',
+        tags: ['Users'],
+        responses: [
+            new OA\Response(
+                response: Response::HTTP_OK,
+                description: 'Liste des utilisateurs.',
+                content: new OA\JsonContent(
+                    type: 'array',
+                    items: new OA\Items(ref: new Model(type: UserReadDTO::class))
+                )
+            ),
+            new OA\Response(response: Response::HTTP_FORBIDDEN, description: 'Accès refusé.')
+        ]
+    )]
+    public function listUsers(): JsonResponse
+    {
+        try {
+            $users = $this->userManager->getAllUsers();
+        } catch (AccessDeniedException $exception) {
+            return $this->json(['message' => $exception->getMessage()], Response::HTTP_FORBIDDEN);
+        }
+
+        $dtos = array_map(fn($user) => $this->dtoFactory->readDtoFromEntity($user), $users);
+
+        return $this->json($dtos);
+    }
+
     #[Route('/api/users/update', name: 'users_update', methods: 'POST')]
     #[OA\Post(
         summary: 'Mettre à jour un utilisateur',
