@@ -4,6 +4,7 @@ namespace App\DTO\User;
 
 use App\DTO\Builder\AbstractDTOFactory;
 use App\Entity\User;
+use DateTimeInterface;
 use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\FileBag;
 use Symfony\Component\HttpFoundation\InputBag;
@@ -75,6 +76,8 @@ class UserDTOFactory extends AbstractDTOFactory
             $entity->getRoles(),
             $entity->getGoogleSub(),
             $entity->getEmailVerified(),
+            $entity->getCreatedAt()->format(DateTimeInterface::ATOM),
+            $entity->getUpdatedAt()->format(DateTimeInterface::ATOM),
         );
 
         return $dto;
