@@ -5,6 +5,8 @@ namespace App\Controller;
 use App\Controller\Traits\HardDeleteRequestTrait;
 use App\DTO\Copy\CopyDTOFactory;
 use App\DTO\Copy\CopyReadDTO;
+use App\Enum\CopyCondition;
+use App\Enum\Language;
 use App\Service\CopyManagerService;
 use InvalidArgumentException;
 use Nelmio\ApiDocBundle\Attribute\Model;
@@ -100,6 +102,208 @@ final class CopyController extends AbstractController
         $data = $this->copyService->getCopies();
 
         return $this->json($data);
+    }
+
+    #[Route('/api/copy/for-sale', name: 'copy_for_sale_list', methods: 'GET')]
+    #[OA\Get(
+        summary: 'Lister les exemplaires en vente avec filtres',
+        tags: ['Copies'],
+        parameters: [
+            new OA\Parameter(
+                name: 'limit',
+                in: 'query',
+                description: 'Nombre maximum de résultats à retourner',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, default: 20)
+            ),
+            new OA\Parameter(
+                name: 'offset',
+                in: 'query',
+                description: 'Décalage de pagination',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 0, default: 0)
+            ),
+            new OA\Parameter(
+                name: 'copyCondition',
+                in: 'query',
+                description: 'Filtrer par état de l\'exemplaire (mint, near_mint, very_fine, fine, very_good, good, fair, poor)',
+                required: false,
+                schema: new OA\Schema(
+                    type: 'string',
+                    enum: ['mint', 'near_mint', 'very_fine', 'fine', 'very_good', 'good', 'fair', 'poor']
+                )
+            ),
+            new OA\Parameter(
+                name: 'minPrice',
+                in: 'query',
+                description: 'Prix minimum en centimes',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 0)
+            ),
+            new OA\Parameter(
+                name: 'maxPrice',
+                in: 'query',
+                description: 'Prix maximum en centimes',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 0)
+            ),
+            new OA\Parameter(
+                name: 'titleLanguage',
+                in: 'query',
+                description: 'Langue du titre (code ISO 639-1)',
+                required: false,
+                schema: new OA\Schema(
+                    type: 'string',
+                    enum: ['ar', 'de', 'en', 'es', 'fr', 'hi', 'it', 'ja', 'ko', 'nl', 'pl', 'pt', 'ru', 'sv', 'tr', 'uk', 'zh']
+                )
+            ),
+            new OA\Parameter(
+                name: 'titlePublisher',
+                in: 'query',
+                description: 'Identifiant de l\'éditeur du titre',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1)
+            ),
+            new OA\Parameter(
+                name: 'titleIsbn',
+                in: 'query',
+                description: 'ISBN exact du titre',
+                required: false,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'order',
+                in: 'query',
+                description: 'Ordre de tri sur la date de mise à jour (ASC ou DESC)',
+                required: false,
+                schema: new OA\Schema(type: 'string', enum: ['ASC', 'DESC'], default: 'DESC')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: Response::HTTP_OK,
+                description: 'Liste paginée des exemplaires en vente.',
+                content: new OA\JsonContent(
+                    type: 'array',
+                    items: new OA\Items(ref: new Model(type: CopyReadDTO::class))
+                )
+            ),
+            new OA\Response(
+                response: Response::HTTP_BAD_REQUEST,
+                description: 'Requête invalide'
+            )
+        ]
+    )]
+    public function getCopiesForSale(Request $request): JsonResponse
+    {
+        $limit = $request->query->getInt('limit', 20);
+        if ($limit < 1) {
+            throw new BadRequestException('limit must be greater than 0');
+        }
+
+        $offset = $request->query->getInt('offset', 0);
+        if ($offset < 0) {
+            throw new BadRequestException('offset cannot be negative');
+        }
+
+        $orderValue = $request->query->get('order');
+        $order = 'DESC';
+        if ($orderValue !== null && $orderValue !== '') {
+            $order = strtoupper((string) $orderValue);
+        }
+        if (!in_array($order, ['ASC', 'DESC'], true)) {
+            throw new BadRequestException('order must be either ASC or DESC');
+        }
+
+        $copyCondition = null;
+        $copyConditionValue = $request->query->get('copyCondition');
+        if ($copyConditionValue !== null && $copyConditionValue !== '') {
+            $copyCondition = CopyCondition::tryFrom($copyConditionValue);
+            if (is_null($copyCondition)) {
+                throw new BadRequestException('Invalid copyCondition value');
+            }
+        }
+
+        $language = null;
+        $languageValue = $request->query->get('titleLanguage');
+        if ($languageValue !== null && $languageValue !== '') {
+            $language = Language::tryFrom($languageValue);
+            if (is_null($language)) {
+                throw new BadRequestException('Invalid titleLanguage value');
+            }
+        }
+
+        $minPrice = null;
+        if ($request->query->has('minPrice')) {
+            $minPriceRaw = $request->query->get('minPrice');
+            if ($minPriceRaw === '' || $minPriceRaw === null) {
+                throw new BadRequestException('minPrice cannot be empty');
+            }
+            $minPriceSanitized = trim((string) $minPriceRaw);
+            if ($minPriceSanitized === '' || !ctype_digit($minPriceSanitized)) {
+                throw new BadRequestException('minPrice must be a non-negative integer');
+            }
+            $minPrice = (int) $minPriceSanitized;
+            if ($minPrice < 0) {
+                throw new BadRequestException('minPrice cannot be negative');
+            }
+        }
+
+        $maxPrice = null;
+        if ($request->query->has('maxPrice')) {
+            $maxPriceRaw = $request->query->get('maxPrice');
+            if ($maxPriceRaw === '' || $maxPriceRaw === null) {
+                throw new BadRequestException('maxPrice cannot be empty');
+            }
+            $maxPriceSanitized = trim((string) $maxPriceRaw);
+            if ($maxPriceSanitized === '' || !ctype_digit($maxPriceSanitized)) {
+                throw new BadRequestException('maxPrice must be a non-negative integer');
+            }
+            $maxPrice = (int) $maxPriceSanitized;
+            if ($maxPrice < 0) {
+                throw new BadRequestException('maxPrice cannot be negative');
+            }
+        }
+
+        if (!is_null($minPrice) && !is_null($maxPrice) && $minPrice > $maxPrice) {
+            throw new BadRequestException('minPrice cannot be greater than maxPrice');
+        }
+
+        $publisherId = null;
+        $publisherValue = $request->query->get('titlePublisher');
+        if ($publisherValue !== null && $publisherValue !== '') {
+            $publisherSanitized = trim((string) $publisherValue);
+            if ($publisherSanitized === '' || !ctype_digit($publisherSanitized)) {
+                throw new BadRequestException('titlePublisher must be a positive integer');
+            }
+            $publisherId = (int) $publisherSanitized;
+            if ($publisherId < 1) {
+                throw new BadRequestException('titlePublisher must be a positive integer');
+            }
+        }
+
+        $isbn = null;
+        $isbnValue = $request->query->get('titleIsbn');
+        if ($isbnValue !== null && $isbnValue !== '') {
+            $isbn = trim((string) $isbnValue);
+            if ($isbn === '') {
+                throw new BadRequestException('titleIsbn cannot be empty');
+            }
+        }
+
+        $copies = $this->copyService->getCopiesForSale(
+            $limit,
+            $offset,
+            $copyCondition,
+            $minPrice,
+            $maxPrice,
+            $language,
+            $publisherId,
+            $isbn,
+            $order,
+        );
+
+        return $this->json($copies);
     }
 
     #[Route('/api/copy', name: 'copy_remove', methods: 'DELETE')]

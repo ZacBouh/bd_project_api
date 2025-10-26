@@ -4,6 +4,8 @@ namespace App\Repository;
 
 use App\Entity\Copy;
 use App\Entity\Title;
+use App\Enum\CopyCondition;
+use App\Enum\Language;
 use App\Security\Role;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -21,6 +23,73 @@ class CopyRepository extends ServiceEntityRepository
         private Security $security,
     ) {
         parent::__construct($registry, Copy::class);
+    }
+
+    /**
+     * @return array<Copy>
+     */
+    public function findForSaleWithFilters(
+        int $limit,
+        int $offset,
+        ?CopyCondition $condition,
+        ?int $minPrice,
+        ?int $maxPrice,
+        ?Language $language,
+        ?int $publisherId,
+        ?string $isbn,
+        string $orderDirection,
+    ): array {
+        $qb = $this->createQueryBuilder('copy')
+            ->andWhere('copy.deletedAt IS NULL')
+            ->andWhere('copy.forSale = :forSale')
+            ->setParameter('forSale', true)
+            ->leftJoin('copy.title', 'title')
+            ->addSelect('title')
+            ->leftJoin('title.publisher', 'publisher')
+            ->addSelect('publisher')
+            ->leftJoin('copy.owner', 'owner')
+            ->addSelect('owner')
+            ->leftJoin('copy.coverImage', 'coverImage')
+            ->addSelect('coverImage')
+            ->leftJoin('copy.uploadedImages', 'uploadedImage')
+            ->addSelect('uploadedImage')
+            ->setFirstResult($offset)
+            ->setMaxResults($limit)
+            ->orderBy('copy.updatedAt', $orderDirection);
+
+        if (!is_null($condition)) {
+            $qb->andWhere('copy.copyCondition = :condition')
+                ->setParameter('condition', $condition);
+        }
+
+        if (!is_null($minPrice)) {
+            $qb->andWhere('copy.price >= :minPrice')
+                ->setParameter('minPrice', $minPrice);
+        }
+
+        if (!is_null($maxPrice)) {
+            $qb->andWhere('copy.price <= :maxPrice')
+                ->setParameter('maxPrice', $maxPrice);
+        }
+
+        if (!is_null($language)) {
+            $qb->andWhere('title.language = :language')
+                ->setParameter('language', $language);
+        }
+
+        if (!is_null($publisherId)) {
+            $qb->andWhere('publisher.id = :publisherId')
+                ->setParameter('publisherId', $publisherId);
+        }
+
+        if (!is_null($isbn)) {
+            $qb->andWhere('title.isbn = :isbn')
+                ->setParameter('isbn', $isbn);
+        }
+
+        /** @var array<Copy> $copies */
+        $copies = $qb->getQuery()->getResult();
+        return $copies;
     }
 
     /**

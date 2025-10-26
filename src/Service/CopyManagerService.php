@@ -14,6 +14,7 @@ use Symfony\Component\HttpFoundation\FileBag;
 use Symfony\Component\HttpFoundation\InputBag;
 use App\Entity\User;
 use App\Enum\CopyCondition;
+use App\Enum\Language;
 use App\Enum\PriceCurrency;
 use App\Mapper\CopyMapper;
 use App\Repository\TitleRepository;
@@ -88,6 +89,40 @@ class CopyManagerService
             $copyDTOs[] = $dto;
             // $this->logger->warning("built dto " . json_encode($dto));
         }
+        return $copyDTOs;
+    }
+
+    /**
+     * @return array<CopyReadDTO>
+     */
+    public function getCopiesForSale(
+        int $limit,
+        int $offset,
+        ?CopyCondition $condition,
+        ?int $minPrice,
+        ?int $maxPrice,
+        ?Language $language,
+        ?int $publisherId,
+        ?string $isbn,
+        string $order,
+    ): array {
+        $copies = $this->copyRepository->findForSaleWithFilters(
+            $limit,
+            $offset,
+            $condition,
+            $minPrice,
+            $maxPrice,
+            $language,
+            $publisherId,
+            $isbn,
+            $order,
+        );
+
+        $copyDTOs = [];
+        foreach ($copies as $copy) {
+            $copyDTOs[] = $this->dtoFactory->readDtoFromEntity($copy);
+        }
+
         return $copyDTOs;
     }
 
