@@ -6,6 +6,7 @@ use App\Contract\Entity\HasUploadedImagesInterface;
 use App\Entity\Trait\HasDefaultNormalizeCallback;
 use App\Entity\Trait\HasUploadedImagesTrait;
 use App\Entity\Trait\TimestampableTrait;
+use App\Entity\Trait\SoftDeletableTrait;
 use App\Repository\ArtistRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -21,6 +22,7 @@ class Artist implements HasUploadedImagesInterface
 {
     use HasUploadedImagesTrait;
     use TimestampableTrait;
+    use SoftDeletableTrait;
     /** @use HasDefaultNormalizeCallback<self>  */
     use HasDefaultNormalizeCallback;
 

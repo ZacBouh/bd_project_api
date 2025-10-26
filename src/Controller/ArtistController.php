@@ -2,11 +2,12 @@
 
 namespace App\Controller;
 
+use App\Controller\Traits\HardDeleteRequestTrait;
 use App\DTO\Artist\ArtistDTOFactory;
 use App\DTO\Artist\ArtistReadDTO;
-use App\Repository\ArtistRepository;
 use App\Repository\SkillRepository;
 use App\Service\ArtistManagerService;
+use InvalidArgumentException;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 use Psr\Log\LoggerInterface;
@@ -15,13 +16,17 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Exception\ResourceNotFoundException;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+use Symfony\Component\Validator\Exception\ValidationFailedException;
 
 final class ArtistController extends AbstractController
 {
+    use HardDeleteRequestTrait;
+
     public function __construct(
         private SkillRepository $skillRepository,
         private ArtistManagerService $artistManager,
-        private ArtistRepository $artistRepository,
         private LoggerInterface $logger,
         private ArtistDTOFactory $dtoFactory,
     ) {}
@@ -96,9 +101,143 @@ final class ArtistController extends AbstractController
     public function createArtist(
         Request $request
     ): JsonResponse {
-        $this->logger->critical("Received Create Artist Request");
-        $newArtist = $this->artistManager->createArtist($request->request, $request->files);
-        return $this->json($newArtist);
+        try {
+            $newArtist = $this->artistManager->createArtist($request->request, $request->files);
+        } catch (ValidationFailedException $exception) {
+            return $this->json([
+                'message' => 'Validation failed',
+                'errors' => (string) $exception,
+            ], Response::HTTP_BAD_REQUEST);
+        } catch (InvalidArgumentException $exception) {
+            return $this->json(['message' => $exception->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
+
+        $dto = $this->dtoFactory->readDtoFromEntity($newArtist);
+        return $this->json($dto);
+    }
+
+    #[Route('/api/artists/update', name: 'artist_update', methods: 'POST')]
+    #[OA\Post(
+        summary: 'Mettre à jour un artiste',
+        tags: ['Artists'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['id', 'skills'],
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer'),
+                        new OA\Property(property: 'firstName', type: 'string', nullable: true),
+                        new OA\Property(property: 'lastName', type: 'string', nullable: true),
+                        new OA\Property(property: 'pseudo', type: 'string', nullable: true),
+                        new OA\Property(
+                            property: 'skills',
+                            type: 'array',
+                            items: new OA\Items(type: 'string'),
+                            description: 'Identifiants ou noms de compétences enregistrées.'
+                        ),
+                        new OA\Property(property: 'birthDate', type: 'string', format: 'date', nullable: true),
+                        new OA\Property(property: 'deathDate', type: 'string', format: 'date', nullable: true),
+                        new OA\Property(property: 'coverImageFile', type: 'string', format: 'binary', nullable: true),
+                    ]
+                )
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: Response::HTTP_OK,
+                description: 'Artiste mis à jour.',
+                content: new OA\JsonContent(ref: new Model(type: ArtistReadDTO::class))
+            ),
+            new OA\Response(response: Response::HTTP_BAD_REQUEST, description: 'Requête invalide.'),
+            new OA\Response(response: Response::HTTP_FORBIDDEN, description: 'Accès refusé.'),
+            new OA\Response(response: Response::HTTP_NOT_FOUND, description: 'Artiste introuvable.')
+        ]
+    )]
+    public function updateArtist(Request $request): JsonResponse
+    {
+        try {
+            $artist = $this->artistManager->updateArtist($request->request, $request->files);
+        } catch (ValidationFailedException $exception) {
+            return $this->json([
+                'message' => 'Validation failed',
+                'errors' => (string) $exception,
+            ], Response::HTTP_BAD_REQUEST);
+        } catch (InvalidArgumentException $exception) {
+            return $this->json(['message' => $exception->getMessage()], Response::HTTP_BAD_REQUEST);
+        } catch (AccessDeniedException $exception) {
+            return $this->json(['message' => $exception->getMessage()], Response::HTTP_FORBIDDEN);
+        } catch (ResourceNotFoundException $exception) {
+            return $this->json(['message' => $exception->getMessage()], Response::HTTP_NOT_FOUND);
+        }
+
+        $dto = $this->dtoFactory->readDtoFromEntity($artist);
+        return $this->json($dto);
+    }
+
+    #[Route('/api/artists', name: 'artist_remove', methods: 'DELETE')]
+    #[OA\Delete(
+        summary: 'Supprimer un artiste',
+        tags: ['Artists'],
+        parameters: [
+            new OA\Parameter(
+                name: 'hardDelete',
+                in: 'query',
+                description: 'Forcer la suppression définitive (administrateur uniquement).',
+                schema: new OA\Schema(type: 'boolean'),
+                required: false
+            )
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['id'],
+                properties: [
+                    new OA\Property(property: 'id', type: 'integer', description: 'Identifiant de l’artiste à supprimer.'),
+                    new OA\Property(property: 'hardDelete', type: 'boolean', nullable: true, description: 'Forcer la suppression définitive (administrateur uniquement).')
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: Response::HTTP_OK,
+                description: 'Artiste supprimé.',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string')
+                    ]
+                )
+            ),
+            new OA\Response(response: Response::HTTP_BAD_REQUEST, description: 'Requête invalide.'),
+            new OA\Response(response: Response::HTTP_FORBIDDEN, description: 'Accès refusé.'),
+            new OA\Response(response: Response::HTTP_NOT_FOUND, description: 'Artiste introuvable.')
+        ]
+    )]
+    public function removeArtist(Request $request): JsonResponse
+    {
+        try {
+            $payload = json_decode($request->getContent(), true);
+            if (!is_array($payload)) {
+                $payload = [];
+            }
+            /** @var int|null $artistId */
+            $artistId = $payload['id'] ?? null; //@phpstan-ignore-line
+            if (is_null($artistId)) {
+                throw new InvalidArgumentException('The id is null');
+            }
+            $hardDelete = $this->shouldHardDelete($request, $payload);
+            $this->logger->warning(sprintf('Attempting to remove artist with id : %d', $artistId));
+            $this->artistManager->removeArtist((int) $artistId, $hardDelete);
+        } catch (InvalidArgumentException $exception) {
+            return $this->json(['message' => $exception->getMessage()], Response::HTTP_BAD_REQUEST);
+        } catch (AccessDeniedException $exception) {
+            return $this->json(['message' => $exception->getMessage()], Response::HTTP_FORBIDDEN);
+        } catch (ResourceNotFoundException $exception) {
+            return $this->json(['message' => $exception->getMessage()], Response::HTTP_NOT_FOUND);
+        }
+
+        return $this->json(['message' => 'Artist successfully removed, id : ' . $artistId]);
     }
 
     #[Route('/api/artists', name: 'artist_get', methods: 'GET')]
@@ -118,13 +257,8 @@ final class ArtistController extends AbstractController
     )]
     public function getArtists(): JsonResponse
     {
-        $this->logger->critical("Received Get Artists Request");
-        $artistsEntities = $this->artistRepository->findWithAllRelations();
-        $data = [];
-        foreach ($artistsEntities as $artist) {
-            $data[] = $this->dtoFactory->readDtoFromEntity($artist);
-        }
-        return $this->json($data);
+        $artistsDtos = $this->artistManager->getAll();
+        return $this->json($artistsDtos);
     }
 
     #[Route('/api/artists/search', name: 'artist_search', methods: 'GET')]

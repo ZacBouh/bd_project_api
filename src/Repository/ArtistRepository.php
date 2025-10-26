@@ -24,6 +24,7 @@ class ArtistRepository extends ServiceEntityRepository
     {
         /** @var array<Artist> $artists */
         $artists = $this->createQueryBuilder('a')
+            ->andWhere('a.deletedAt IS NULL')
             ->leftJoin('a.skills', 's')->addSelect('s')
             ->leftJoin('a.titlesContributions', 'tc')->addSelect('tc')
             ->leftJoin('tc.skill', 'skill')->addSelect('skill')
@@ -43,6 +44,7 @@ class ArtistRepository extends ServiceEntityRepository
     {
         $qb = $this->createQueryBuilder('a')
             ->addSelect("MATCH (a.firstName, a.lastName, a.pseudo) AGAINST (:q IN BOOLEAN MODE) AS HIDDEN score")
+            ->andWhere('a.deletedAt IS NULL')
             ->having('score > 0')
             ->setParameter("q", $query)
             ->orderBy('score', 'DESC')
