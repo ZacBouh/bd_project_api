@@ -51,6 +51,9 @@ class PayoutTaskReadDTO
         #[OA\Property(format: 'date-time')]
         public string $createdAt,
 
+        #[OA\Property(format: 'date-time')]
+        public string $updatedAt,
+
         #[OA\Property(nullable: true, format: 'date-time')]
         public ?string $paidAt,
     ) {

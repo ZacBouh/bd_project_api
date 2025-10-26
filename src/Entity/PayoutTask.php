@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use App\Entity\OrderItem;
+use App\Entity\Trait\TimestampableTrait;
 use App\Enum\PayoutTaskPaymentType;
 use App\Enum\PayoutTaskStatus;
 use App\Enum\PriceCurrency;
@@ -13,8 +14,11 @@ use DateTimeImmutable;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: PayoutTaskRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class PayoutTask
 {
+    use TimestampableTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -47,16 +51,8 @@ class PayoutTask
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $paymentInformation = null;
 
-    #[ORM\Column(type: 'datetime_immutable')]
-    private DateTimeImmutable $createdAt;
-
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?DateTimeImmutable $paidAt = null;
-
-    public function __construct()
-    {
-        $this->createdAt = new DateTimeImmutable();
-    }
 
     public function getId(): ?int
     {
@@ -155,18 +151,6 @@ class PayoutTask
     public function setPaymentInformation(?array $paymentInformation): self
     {
         $this->paymentInformation = $paymentInformation;
-
-        return $this;
-    }
-
-    public function getCreatedAt(): DateTimeImmutable
-    {
-        return $this->createdAt;
-    }
-
-    public function setCreatedAt(DateTimeImmutable $createdAt): self
-    {
-        $this->createdAt = $createdAt;
 
         return $this;
     }

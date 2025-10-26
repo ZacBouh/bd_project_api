@@ -59,6 +59,7 @@ class PayoutTaskDTOFactory extends AbstractDTOFactory
             $entity->getPaymentType()->value,
             $entity->getPaymentInformation(),
             $entity->getCreatedAt()->format(DateTimeInterface::ATOM),
+            $entity->getUpdatedAt()->format(DateTimeInterface::ATOM),
             $entity->getPaidAt()?->format(DateTimeInterface::ATOM),
         );
     }
