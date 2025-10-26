@@ -28,7 +28,8 @@ class CopyRepository extends ServiceEntityRepository
      */
     public function findAllWithRelations(): array
     {
-        $qb = $this->createQueryBuilder('copy');
+        $qb = $this->createQueryBuilder('copy')
+            ->andWhere('copy.deletedAt IS NULL');
         /** @var User */
         $user = $this->security->getUser();
         if (!$this->security->isGranted(Role::ADMIN->value)) {
@@ -71,6 +72,7 @@ class CopyRepository extends ServiceEntityRepository
             ->addSelect("MATCH (t.name) AGAINST (:q IN BOOLEAN MODE) AS HIDDEN t_score")
             ->addSelect("MATCH (tp.name) AGAINST (:q IN BOOLEAN MODE) AS HIDDEN tp_score")
             ->having('t_score > 0 OR tp_score > 0')
+            ->andWhere('c.deletedAt IS NULL')
 
             ->orderBy('CASE WHEN t_score > 0 THEN 1 ELSE 0 END', 'DESC')
             ->addOrderBy('t_score', 'DESC')

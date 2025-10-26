@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Controller\Traits\HardDeleteRequestTrait;
 use App\DTO\Copy\CopyDTOFactory;
 use App\DTO\Copy\CopyReadDTO;
 use App\Service\CopyManagerService;
@@ -18,6 +19,8 @@ use Symfony\Component\Routing\Attribute\Route;
 
 final class CopyController extends AbstractController
 {
+    use HardDeleteRequestTrait;
+
     public function __construct(
         private LoggerInterface $logger,
         private CopyManagerService $copyService,
@@ -103,12 +106,22 @@ final class CopyController extends AbstractController
     #[OA\Delete(
         summary: 'Supprimer un exemplaire',
         tags: ['Copies'],
+        parameters: [
+            new OA\Parameter(
+                name: 'hardDelete',
+                in: 'query',
+                description: 'Forcer la suppression définitive (administrateur uniquement).',
+                schema: new OA\Schema(type: 'boolean'),
+                required: false
+            )
+        ],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
                 required: ['id'],
                 properties: [
-                    new OA\Property(property: 'id', type: 'integer', description: 'Identifiant de l’exemplaire à supprimer.')
+                    new OA\Property(property: 'id', type: 'integer', description: 'Identifiant de l’exemplaire à supprimer.'),
+                    new OA\Property(property: 'hardDelete', type: 'boolean', nullable: true, description: 'Forcer la suppression définitive (administrateur uniquement).')
                 ]
             )
         ),
@@ -130,13 +143,18 @@ final class CopyController extends AbstractController
         Request $request
     ): JsonResponse {
         try {
+            $payload = json_decode($request->getContent(), true);
+            if (!is_array($payload)) {
+                $payload = [];
+            }
             /** @var int|null $copyId */
-            $copyId = json_decode($request->getContent(), true)['id'] ?? null; //@phpstan-ignore-line
+            $copyId = $payload['id'] ?? null; //@phpstan-ignore-line
             if (is_null($copyId)) {
                 throw new InvalidArgumentException('The id is null ');
             }
+            $hardDelete = $this->shouldHardDelete($request, $payload);
             $this->logger->warning("Intenting to remove copy with id : $copyId");
-            $this->copyService->removeCopy($copyId);
+            $this->copyService->removeCopy($copyId, $hardDelete);
             return $this->json(['message' => 'Copy successfully removed, id : ' . $copyId]);
         } catch (InvalidArgumentException $e) {
             return $this->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);

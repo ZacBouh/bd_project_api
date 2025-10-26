@@ -27,6 +27,7 @@ class SeriesRepository extends ServiceEntityRepository
          * @var array<Series> $series
          */
         $series = $this->createQueryBuilder('s')
+            ->andWhere('s.deletedAt IS NULL')
             ->leftJoin('s.publisher', 'p')->addSelect('p')
             ->leftJoin('s.coverImage', 'ci')->addSelect('ci')
             ->leftJoin('s.uploadedImages', 'ui')->addSelect('ui')

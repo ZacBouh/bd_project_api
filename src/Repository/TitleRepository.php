@@ -22,6 +22,7 @@ class TitleRepository extends ServiceEntityRepository
     public function findWithAllRelations(): array
     {
         $qb = $this->createQueryBuilder('t')
+            ->andWhere('t.deletedAt IS NULL')
             ->leftJoin('t.publisher', 'p')->addSelect('p')
             ->leftJoin('t.artistsContributions', 'c')->addSelect('c')
             ->leftJoin('t.uploadedImages', 'ui')->addSelect('ui')
@@ -44,6 +45,7 @@ class TitleRepository extends ServiceEntityRepository
     {
 
         $qb = $this->createQueryBuilder('t')
+            ->andWhere('t.deletedAt IS NULL')
             ->addSelect("MATCH (t.name) AGAINST (:q IN BOOLEAN MODE) AS HIDDEN score")
             ->andWhere("MATCH (t.name) AGAINST (:q IN BOOLEAN MODE) > 0")
             ->setParameter("q", $query)

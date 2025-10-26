@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Entity\Trait\HasLanguageTrait;
 use App\Entity\Trait\HasUploadedImagesTrait;
+use App\Entity\Trait\SoftDeletableTrait;
 use App\Entity\Trait\TimestampableTrait;
 use App\Enum\Language;
 use App\Repository\PublisherCollectionRepository;
@@ -20,7 +21,7 @@ class PublisherCollection
     use HasLanguageTrait;
     use HasUploadedImagesTrait;
     use TimestampableTrait;
-    use HasUploadedImagesTrait;
+    use SoftDeletableTrait;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]

@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Contract\Entity\HasUploadedImagesInterface;
 use App\Entity\Trait\HasUploadedImagesTrait;
+use App\Entity\Trait\SoftDeletableTrait;
 use App\Entity\Trait\TimestampableTrait;
 use App\Entity\PublisherCollection;
 use App\Entity\Trait\HasDefaultNormalizeCallback;
@@ -21,6 +22,7 @@ class Publisher implements HasUploadedImagesInterface
 {
     use HasUploadedImagesTrait;
     use TimestampableTrait;
+    use SoftDeletableTrait;
     /** @use HasDefaultNormalizeCallback<self> */
     use HasDefaultNormalizeCallback;
 

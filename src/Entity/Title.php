@@ -6,6 +6,7 @@ use App\Contract\Entity\HasUploadedImagesInterface;
 use App\Entity\Trait\HasDefaultNormalizeCallback;
 use App\Entity\Trait\HasLanguageTrait;
 use App\Entity\Trait\HasUploadedImagesTrait;
+use App\Entity\Trait\SoftDeletableTrait;
 use App\Repository\TitleRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -23,6 +24,7 @@ class Title implements HasUploadedImagesInterface
     use HasLanguageTrait;
     /** @use HasDefaultNormalizeCallback<self> */
     use HasDefaultNormalizeCallback;
+    use SoftDeletableTrait;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]

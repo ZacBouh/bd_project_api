@@ -25,7 +25,12 @@ class SeriesMapper extends AbstractEntityMapper
     public function fromWriteDTO(object $dto, ?object $entity = null, array $extra = []): object
     {
         $data = $this->normalizer->normalize($dto, 'array');
-        $series = $this->denormalizer->denormalize($data, Series::class, 'array', [AbstractObjectNormalizer::IGNORED_ATTRIBUTES => ['coverImage', 'uploadedImages', 'publisher', 'titles']]);
+        $context = [AbstractObjectNormalizer::IGNORED_ATTRIBUTES => ['coverImage', 'uploadedImages', 'publisher', 'titles']];
+        if (!is_null($entity)) {
+            $context[AbstractObjectNormalizer::OBJECT_TO_POPULATE] = $entity;
+        }
+        /** @var Series $series */
+        $series = $this->denormalizer->denormalize($data, Series::class, 'array', $context);
         $series = $this->afterDenormalization($dto, $series, $extra);
         /** @var Publisher $publisher */
         $publisher = $this->em->getReference(Publisher::class, $dto->publisher);

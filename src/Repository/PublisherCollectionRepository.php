@@ -23,6 +23,7 @@ class PublisherCollectionRepository extends ServiceEntityRepository
     {
         /** @var array<PublisherCollection> $collections */
         $collections =  $this->createQueryBuilder('pc')
+            ->andWhere('pc.deletedAt IS NULL')
             ->leftJoin('pc.publisher', 'p')->addSelect('p')
             ->leftJoin('pc.coverImage', 'ci')->addSelect('ci')
             ->leftJoin('pc.uploadedImages', 'ui')->addSelect('ui')

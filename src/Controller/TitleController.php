@@ -2,11 +2,13 @@
 
 namespace App\Controller;
 
+use App\Controller\Traits\HardDeleteRequestTrait;
 use App\DTO\Title\TitleDTOFactory;
 use App\DTO\Title\TitleReadDTO;
 use App\DTO\Title\TitleWriteDTO;
 use App\Entity\Title;
 use App\Service\TitleManagerService;
+use InvalidArgumentException;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 use Psr\Log\LoggerInterface;
@@ -15,10 +17,13 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Exception\ResourceNotFoundException;
 use Symfony\Component\Validator\Exception\ValidationFailedException;
 
 final class TitleController extends AbstractController
 {
+    use HardDeleteRequestTrait;
+
     public function __construct(
         private TitleManagerService $titleManagerService,
         private TitleDTOFactory $dtoFactory,
@@ -95,6 +100,46 @@ final class TitleController extends AbstractController
         return $this->json($dto, Response::HTTP_OK);
     }
 
+    #[Route('/api/titles/update', name: 'titles_update', methods: 'POST')]
+    #[OA\Post(
+        summary: 'Mettre à jour un titre',
+        tags: ['Titles'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(ref: new Model(type: TitleWriteDTO::class))
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: Response::HTTP_OK,
+                description: 'Titre mis à jour',
+                content: new OA\JsonContent(ref: new Model(type: TitleReadDTO::class))
+            ),
+            new OA\Response(response: Response::HTTP_BAD_REQUEST, description: 'Requête invalide.'),
+            new OA\Response(response: Response::HTTP_NOT_FOUND, description: 'Titre introuvable.')
+        ]
+    )]
+    public function updateTitle(Request $request): JsonResponse
+    {
+        try {
+            $title = $this->titleManagerService->updateTitle($request->request, $request->files);
+        } catch (ValidationFailedException $exception) {
+            return $this->json([
+                'message' => 'Validation failed',
+                'errors' => (string) $exception,
+            ], Response::HTTP_BAD_REQUEST);
+        } catch (InvalidArgumentException $exception) {
+            return $this->json(['message' => $exception->getMessage()], Response::HTTP_BAD_REQUEST);
+        } catch (ResourceNotFoundException $exception) {
+            return $this->json(['message' => $exception->getMessage()], Response::HTTP_NOT_FOUND);
+        }
+
+        $dto = $this->dtoFactory->readDTOFromEntity($title);
+        return $this->json($dto);
+    }
+
     #[Route('/api/titles', name: 'titles_get', methods: 'GET')]
     #[OA\Get(
         summary: 'Liste tous les titres disponibles',
@@ -116,6 +161,67 @@ final class TitleController extends AbstractController
         /** @var Array<int, Title> $titles */
         $titles = $this->titleManagerService->getTitles();
         return $this->json($titles);
+    }
+
+    #[Route('/api/titles', name: 'titles_remove', methods: 'DELETE')]
+    #[OA\Delete(
+        summary: 'Supprimer un titre',
+        tags: ['Titles'],
+        parameters: [
+            new OA\Parameter(
+                name: 'hardDelete',
+                in: 'query',
+                description: 'Forcer la suppression définitive (administrateur uniquement).',
+                schema: new OA\Schema(type: 'boolean'),
+                required: false
+            )
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['id'],
+                properties: [
+                    new OA\Property(property: 'id', type: 'integer', description: 'Identifiant du titre à supprimer.'),
+                    new OA\Property(property: 'hardDelete', type: 'boolean', nullable: true, description: 'Forcer la suppression définitive (administrateur uniquement).')
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: Response::HTTP_OK,
+                description: 'Titre supprimé.',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string')
+                    ]
+                )
+            ),
+            new OA\Response(response: Response::HTTP_BAD_REQUEST, description: 'Requête invalide.'),
+            new OA\Response(response: Response::HTTP_NOT_FOUND, description: 'Titre introuvable.')
+        ]
+    )]
+    public function removeTitle(Request $request): JsonResponse
+    {
+        try {
+            $payload = json_decode($request->getContent(), true);
+            if (!is_array($payload)) {
+                $payload = [];
+            }
+            /** @var int|null $titleId */
+            $titleId = $payload['id'] ?? null; //@phpstan-ignore-line
+            if (is_null($titleId)) {
+                throw new InvalidArgumentException('The id is null');
+            }
+            $hardDelete = $this->shouldHardDelete($request, $payload);
+            $this->logger->warning(sprintf('Attempting to remove title with id : %d', $titleId));
+            $this->titleManagerService->removeTitle((int) $titleId, $hardDelete);
+        } catch (InvalidArgumentException $exception) {
+            return $this->json(['message' => $exception->getMessage()], Response::HTTP_BAD_REQUEST);
+        } catch (ResourceNotFoundException $exception) {
+            return $this->json(['message' => $exception->getMessage()], Response::HTTP_NOT_FOUND);
+        }
+
+        return $this->json(['message' => 'Title successfully removed, id : ' . $titleId]);
     }
 
     #[Route('/api/titles/search', name: 'title_search', methods: 'GET')]
@@ -199,25 +305,24 @@ final class TitleController extends AbstractController
             ),
             new OA\Response(
                 response: Response::HTTP_BAD_REQUEST,
-                description: 'Aucun identifiant fourni'
+                description: 'Requête invalide'
             )
         ]
     )]
-    public function getTitle(
-        Request $request
-    ): JsonResponse {
-        /** @var array<string, mixed> $data  */
-        $data = json_decode($request->getContent(), true);
-        /** @var string[] $titleIds */
-        $titleIds = $data['titleIds'] ?? [];
-        if (count($titleIds) === 0) {
-            return $this->json(["error" => "No titleId array provided"], Response::HTTP_BAD_REQUEST);
+    public function getTitlesFromIds(Request $request): JsonResponse
+    {
+        try {
+            $content = json_decode($request->getContent(), true, flags: JSON_THROW_ON_ERROR);
+        } catch (\JsonException $error) {
+            return $this->json(['message' => 'Invalid JSON payload'], Response::HTTP_BAD_REQUEST);
         }
+        if (!array_key_exists('titleIds', $content) || !is_array($content['titleIds'])) {
+            return $this->json(['message' => 'Invalid request body'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $titleIds = array_map('intval', $content['titleIds']);
         $titles = $this->titleManagerService->findTitles($titleIds);
-        $dto = [];
-        foreach ($titles as $title) {
-            $dto[] = $this->dtoFactory->readDTOFromEntity($title);
-        }
-        return $this->json($dto);
+        $dtos = array_map(fn(Title $title) => $this->dtoFactory->readDTOFromEntity($title), $titles);
+        return $this->json($dtos);
     }
 }

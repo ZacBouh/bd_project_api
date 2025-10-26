@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Entity\Trait\HasLanguageTrait;
 use App\Entity\Trait\HasOnGoingStatus;
 use App\Entity\Trait\HasUploadedImagesTrait;
+use App\Entity\Trait\SoftDeletableTrait;
 use App\Entity\Trait\TimestampableTrait;
 use App\Repository\SeriesRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -20,6 +21,7 @@ class Series
     use HasUploadedImagesTrait;
     use HasLanguageTrait;
     use TimestampableTrait;
+    use SoftDeletableTrait;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]

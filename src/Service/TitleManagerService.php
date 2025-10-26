@@ -16,8 +16,13 @@ use App\Entity\Skill;
 use App\Mapper\TitleEntityMapper;
 use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Routing\Exception\ResourceNotFoundException;
 use Symfony\Component\Validator\Exception\ValidationFailedException;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use App\Service\UploadedImageService;
+use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+use App\Security\Role;
 
 class TitleManagerService
 {
@@ -28,7 +33,8 @@ class TitleManagerService
         private ValidatorInterface $validator,
         private TitleEntityMapper $titleMapper,
         private TitleDTOFactory $dtoFactory,
-        private LoggerInterface $logger
+        private LoggerInterface $logger,
+        private Security $security
     ) {}
 
     /**
@@ -50,26 +56,65 @@ class TitleManagerService
         $title = $this->titleMapper->fromWriteDTO($dto, null, $extra);
         $this->em->persist($title);
         $this->em->flush();
-        $contributions = $dto->artistsContributions;
-        if (!is_null($contributions)) {
-            foreach ($contributions as $contribution) {
-                foreach ($contribution['skills'] as $skill) {
-                    $skillRef = $this->em->getReference(Skill::class, $skill);
-                    $artistRef = $this->em->getReference(Artist::class, $contribution['artist']);
-                    if (is_null($skillRef) || is_null($artistRef)) {
-                        throw new InvalidArgumentException(sprintf('Could not create %s with %s', ArtistTitleContribution::class, json_encode($contribution)));
-                    }
-                    $newContrib = new ArtistTitleContribution();
-                    $newContrib->setSkill($skillRef);
-                    $newContrib->setArtist($artistRef);
-                    $newContrib->setTitle($title);
-                    $this->em->persist($newContrib);
-                    $title->addArtistsContribution($newContrib);
-                }
-            }
-        }
+        $this->syncArtistsContributions($title, $dto->artistsContributions);
         $this->em->flush();
         return $title;
+    }
+
+    /**
+     * @param InputBag<scalar> $inputBag
+     */
+    public function updateTitle(InputBag $inputBag, FileBag $files): Title
+    {
+        $dto = $this->dtoFactory->writeDtoFromInputBag($inputBag, $files);
+        $violations = $this->validator->validate($dto);
+        if (count($violations)) {
+            throw new ValidationFailedException($dto, $violations);
+        }
+        if (is_null($dto->id)) {
+            throw new InvalidArgumentException('Update title : id is null');
+        }
+        /** @var Title|null $title */
+        $title = $this->titleRepository->find($dto->id);
+        if (is_null($title)) {
+            throw new ResourceNotFoundException('No title was found for id ' . $dto->id);
+        }
+        if ($title->isDeleted()) {
+            throw new ResourceNotFoundException('No title was found for id ' . $dto->id);
+        }
+        $extra = [];
+        if ($dto->coverImageFile !== null) {
+            $extra['coverImage'] = $this->imageService->saveUploadedImage($dto->coverImageFile, $dto->name . ' Cover');
+        }
+        /** @var Title $title */
+        $title = $this->titleMapper->fromWriteDTO($dto, $title, $extra);
+        $this->syncArtistsContributions($title, $dto->artistsContributions);
+        $this->em->persist($title);
+        $this->em->flush();
+        return $title;
+    }
+
+    public function removeTitle(int $titleId, bool $hardDelete = false): void
+    {
+        /** @var Title|null $title */
+        $title = $this->titleRepository->find($titleId);
+        if (is_null($title)) {
+            throw new ResourceNotFoundException('No title was found for id ' . $titleId);
+        }
+        if ($title->isDeleted() && !$hardDelete) {
+            throw new ResourceNotFoundException('No title was found for id ' . $titleId);
+        }
+
+        if ($hardDelete) {
+            if (!$this->security->isGranted(Role::ADMIN->value)) {
+                throw new AccessDeniedException('Hard delete requires administrator role');
+            }
+            $this->em->remove($title);
+        } else {
+            $title->markAsDeleted();
+            $this->em->persist($title);
+        }
+        $this->em->flush();
     }
 
     /**
@@ -117,5 +162,36 @@ class TitleManagerService
     public function findTitles(array $titleId): array
     {
         return $this->titleRepository->findBy(['id' => $titleId]);
+    }
+
+    /**
+     * @param array<array{artist: int, skills: string[]}>|null $contributions
+     */
+    private function syncArtistsContributions(Title $title, ?array $contributions): void
+    {
+        if (is_null($contributions)) {
+            return;
+        }
+
+        foreach ($title->getArtistsContributions() as $existing) {
+            $this->em->remove($existing);
+        }
+        $title->getArtistsContributions()->clear();
+
+        foreach ($contributions as $contribution) {
+            foreach ($contribution['skills'] as $skill) {
+                $skillRef = $this->em->getReference(Skill::class, $skill);
+                $artistRef = $this->em->getReference(Artist::class, $contribution['artist']);
+                if (is_null($skillRef) || is_null($artistRef)) {
+                    throw new InvalidArgumentException(sprintf('Could not create %s with %s', ArtistTitleContribution::class, json_encode($contribution)));
+                }
+                $newContrib = new ArtistTitleContribution();
+                $newContrib->setSkill($skillRef);
+                $newContrib->setArtist($artistRef);
+                $newContrib->setTitle($title);
+                $this->em->persist($newContrib);
+                $title->addArtistsContribution($newContrib);
+            }
+        }
     }
 }

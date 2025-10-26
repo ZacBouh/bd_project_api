@@ -14,8 +14,13 @@ use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\FileBag;
 use Symfony\Component\HttpFoundation\InputBag;
+use Symfony\Component\Routing\Exception\ResourceNotFoundException;
 use Symfony\Component\Validator\Exception\ValidationFailedException;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use App\Service\UploadedImageService;
+use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+use App\Security\Role;
 
 class PublisherManagerService
 {
@@ -27,6 +32,7 @@ class PublisherManagerService
         private PublisherEntityMapper $publisherMapper,
         private PublisherDTOFactory $dtoFactory,
         private LoggerInterface $logger,
+        private Security $security,
     ) {}
 
     /**
@@ -47,6 +53,62 @@ class PublisherManagerService
         $this->entityManager->persist($entity);
         $this->entityManager->flush();
         return $entity;
+    }
+
+    /**
+     * @param InputBag<scalar> $inputBag
+     */
+    public function updatePublisher(InputBag $inputBag, FileBag $files): Publisher
+    {
+        $dto = $this->dtoFactory->writeDtoFromInputBag($inputBag, $files);
+        $violations = $this->validator->validate($dto);
+        if (count($violations) > 0) {
+            throw new ValidationFailedException($dto, $violations);
+        }
+        if (is_null($dto->id)) {
+            throw new InvalidArgumentException('Update publisher : id is null');
+        }
+        /** @var Publisher|null $publisher */
+        $publisher = $this->publisherRepository->find($dto->id);
+        if (is_null($publisher)) {
+            throw new ResourceNotFoundException('No publisher was found for id ' . $dto->id);
+        }
+        $extra = [];
+        if (!is_null($dto->coverImageFile)) {
+            $extra['coverImage'] = $this->imageService->saveUploadedImage($dto->coverImageFile, 'Publisher Logo');
+        }
+        if ($publisher->isDeleted()) {
+            throw new ResourceNotFoundException('No publisher was found for id ' . $dto->id);
+        }
+
+        /** @var Publisher $publisher */
+        $publisher = $this->publisherMapper->fromWriteDTO($dto, $publisher, $extra);
+        $this->entityManager->persist($publisher);
+        $this->entityManager->flush();
+        return $publisher;
+    }
+
+    public function removePublisher(int $publisherId, bool $hardDelete = false): void
+    {
+        /** @var Publisher|null $publisher */
+        $publisher = $this->publisherRepository->find($publisherId);
+        if (is_null($publisher)) {
+            throw new ResourceNotFoundException('No publisher was found for id ' . $publisherId);
+        }
+        if ($publisher->isDeleted() && !$hardDelete) {
+            throw new ResourceNotFoundException('No publisher was found for id ' . $publisherId);
+        }
+
+        if ($hardDelete) {
+            if (!$this->security->isGranted(Role::ADMIN->value)) {
+                throw new AccessDeniedException('Hard delete requires administrator role');
+            }
+            $this->entityManager->remove($publisher);
+        } else {
+            $publisher->markAsDeleted();
+            $this->entityManager->persist($publisher);
+        }
+        $this->entityManager->flush();
     }
 
     /**

@@ -95,7 +95,7 @@ class CopyManagerService
      * @throws ResourceNotFoundException
      * @throws AccessDeniedException
      */
-    public function removeCopy(int $copyId): void
+    public function removeCopy(int $copyId, bool $hardDelete = false): void
     {
         /** @var User $user */
         $user = $this->security->getUser();
@@ -108,7 +108,19 @@ class CopyManagerService
         if ($copy->getOwner() !== $user && !$this->security->isGranted(Role::ADMIN->value)) {
             throw new AccessDeniedException('Connected user does not have the right to remove a copy from another user library');
         }
-        $this->entityManager->remove($copy);
+        if ($copy->isDeleted() && !$hardDelete) {
+            throw new ResourceNotFoundException('Copy already removed');
+        }
+
+        if ($hardDelete) {
+            if (!$this->security->isGranted(Role::ADMIN->value)) {
+                throw new AccessDeniedException('Hard delete requires administrator role');
+            }
+            $this->entityManager->remove($copy);
+        } else {
+            $copy->markAsDeleted();
+            $this->entityManager->persist($copy);
+        }
         $this->entityManager->flush();
         return;
     }
@@ -129,6 +141,9 @@ class CopyManagerService
         /** @var Copy|null $copy */
         $copy = $this->copyRepository->findOneBy(['id' => $dto->id]);
         if (is_null($copy)) {
+            throw new ResourceNotFoundException("Update Copy : no copy found for id " . $dto->id);
+        }
+        if ($copy->isDeleted()) {
             throw new ResourceNotFoundException("Update Copy : no copy found for id " . $dto->id);
         }
 

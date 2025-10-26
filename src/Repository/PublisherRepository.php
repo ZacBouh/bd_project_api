@@ -25,6 +25,7 @@ class PublisherRepository extends ServiceEntityRepository
          * @var array<Publisher> $publishers
          */
         $publishers =  $this->createQueryBuilder('p')
+            ->andWhere('p.deletedAt IS NULL')
             ->leftJoin('p.titles', 't')->addSelect('t')
             ->leftJoin('p.uploadedImages', 'uimg')->addSelect('uimg')
             ->leftJoin('p.coverImage', 'cimg')->addSelect('cimg')
@@ -41,6 +42,7 @@ class PublisherRepository extends ServiceEntityRepository
     public function searchPublisher(string $query, int $limit, int $offset): array
     {
         $qb = $this->createQueryBuilder('p')
+            ->andWhere('p.deletedAt IS NULL')
             ->addSelect('MATCH(p.name) AGAINST(:q IN BOOLEAN MODE) AS HIDDEN score')
             ->having('score > 0')
             ->setParameter('q', $query)

@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Entity\Trait\HasDefaultNormalizeCallback;
+use App\Entity\Trait\SoftDeletableTrait;
 use App\Entity\Trait\TimestampableTrait;
 use App\Repository\UserRepository;
 use DateTimeImmutable;
@@ -19,6 +20,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     use TimestampableTrait;
+    use SoftDeletableTrait;
     /** @use HasDefaultNormalizeCallback<self> */
     use HasDefaultNormalizeCallback;
 

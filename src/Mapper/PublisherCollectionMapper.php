@@ -29,7 +29,11 @@ class PublisherCollectionMapper extends AbstractEntityMapper
     public function fromWriteDTO(object $dto, ?object $entity = null, array $extra = []): PublisherCollection
     {
         $data = $this->normalizer->normalize($dto, 'array');
-        $collection = $this->denormalizer->denormalize($data, PublisherCollection::class, 'array', [AbstractObjectNormalizer::IGNORED_ATTRIBUTES => ['coverImage', 'uploadedImages', 'titles']]);
+        $context = [AbstractObjectNormalizer::IGNORED_ATTRIBUTES => ['coverImage', 'uploadedImages', 'titles', 'publisher']];
+        if (!is_null($entity)) {
+            $context[AbstractObjectNormalizer::OBJECT_TO_POPULATE] = $entity;
+        }
+        $collection = $this->denormalizer->denormalize($data, PublisherCollection::class, 'array', $context);
         $collection = $this->afterDenormalization($dto, $collection, $extra);
         /** @var Publisher $publisher */
         $publisher = $this->em->getReference(Publisher::class, $dto->publisher);

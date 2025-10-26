@@ -25,7 +25,14 @@ class TitleEntityMapper extends AbstractEntityMapper
     public function fromWriteDTO(object $dto, ?object $entity = null, array $extra = []): object
     {
         $data = $this->normalizer->normalize($dto, 'array');
-        $title = $this->denormalizer->denormalize($data, Title::class, null, [AbstractObjectNormalizer::IGNORED_ATTRIBUTES => ['coverImage', 'uploadedImages', 'artistsContributions', 'publisher']]);
+        $context = [
+            AbstractObjectNormalizer::IGNORED_ATTRIBUTES => ['coverImage', 'uploadedImages', 'artistsContributions', 'publisher'],
+        ];
+        if (!is_null($entity)) {
+            $context[AbstractObjectNormalizer::OBJECT_TO_POPULATE] = $entity;
+        }
+        /** @var Title $title */
+        $title = $this->denormalizer->denormalize($data, Title::class, null, $context);
         $title = parent::afterDenormalization($dto, $title, $extra);
         $publisher = $this->em->getReference(Publisher::class, $dto->publisher);
         $title->setPublisher($publisher);

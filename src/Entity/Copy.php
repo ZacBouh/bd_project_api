@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Contract\Entity\HasUploadedImagesInterface;
 use App\Entity\Trait\HasUploadedImagesTrait;
+use App\Entity\Trait\SoftDeletableTrait;
 use App\Entity\Trait\TimestampableTrait;
 use App\Enum\CopyCondition;
 use App\Enum\PriceCurrency;
@@ -17,6 +18,7 @@ use Doctrine\ORM\Mapping\ManyToOne;
 class Copy implements HasUploadedImagesInterface
 {
     use TimestampableTrait;
+    use SoftDeletableTrait;
     use HasUploadedImagesTrait;
 
     #[ORM\Id]
