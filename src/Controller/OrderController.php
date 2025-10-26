@@ -132,13 +132,13 @@ class OrderController extends AbstractController
         return $this->json($dto, Response::HTTP_OK);
     }
 
-    #[Route('/{orderRef}/items/{itemId}/confirm', name: 'orders_confirm_item', methods: ['POST'])]
+    #[Route('/confirm', name: 'orders_confirm_item', methods: ['POST'])]
     #[OA\Post(
         summary: 'Confirmer la remise d’un exemplaire',
         tags: ['Orders'],
         parameters: [
-            new OA\Parameter(name: 'orderRef', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
-            new OA\Parameter(name: 'itemId', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'orderRef', in: 'query', required: true, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'itemId', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
         ],
         responses: [
             new OA\Response(response: Response::HTTP_OK, description: 'État mis à jour.'),
@@ -147,12 +147,25 @@ class OrderController extends AbstractController
             new OA\Response(response: Response::HTTP_UNAUTHORIZED, description: 'Utilisateur non authentifié.'),
         ]
     )]
-    public function confirmItem(string $orderRef, int $itemId): JsonResponse
+    public function confirmItem(Request $request): JsonResponse
     {
         $user = $this->getAuthenticatedUser();
         if ($user === null) {
             return new JsonResponse(['error' => 'Authentication required'], Response::HTTP_UNAUTHORIZED);
         }
+
+        $orderRef = $request->query->get('orderRef');
+        $itemIdRaw = $request->query->get('itemId');
+
+        if (!is_string($orderRef) || $orderRef === '') {
+            return new JsonResponse(['error' => 'orderRef is required'], Response::HTTP_BAD_REQUEST);
+        }
+
+        if ($itemIdRaw === null || filter_var($itemIdRaw, FILTER_VALIDATE_INT) === false) {
+            return new JsonResponse(['error' => 'itemId must be an integer'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $itemId = (int) $itemIdRaw;
 
         $order = $this->orderRepository->findOneForBuyer($orderRef, $user);
         if ($order === null) {
