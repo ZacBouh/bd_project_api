@@ -2,14 +2,12 @@
 
 namespace App\Controller;
 
-use App\DTO\UploadedImage\UploadedImageDTOFactory;
 use App\DTO\UploadedImage\UploadedImageReadDTO;
 use App\Service\UploadedImageService;
 use InvalidArgumentException;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,7 +19,6 @@ final class UploadedImageController extends AbstractController
 {
     public function __construct(
         private UploadedImageService $imageService,
-        private UploadedImageDTOFactory $dtoFactory,
     ) {}
 
     #[Route('/api/uploaded-images', name: 'uploaded_images_list', methods: 'GET')]
@@ -43,12 +40,10 @@ final class UploadedImageController extends AbstractController
     public function list(): JsonResponse
     {
         try {
-            $images = $this->imageService->getAllImages();
+            $dtos = $this->imageService->getAllImages();
         } catch (AccessDeniedException $exception) {
             return $this->json(['message' => $exception->getMessage()], Response::HTTP_FORBIDDEN);
         }
-
-        $dtos = array_map(fn($image) => $this->dtoFactory->readDtoFromEntity($image), $images);
 
         return $this->json($dtos);
     }
@@ -85,14 +80,8 @@ final class UploadedImageController extends AbstractController
     )]
     public function update(int $id, Request $request): JsonResponse
     {
-        $newName = $request->request->has('imageName') ? $request->request->get('imageName') : null;
-        $uploadedFile = $request->files->get('imageFile');
-        if (!is_null($uploadedFile) && !$uploadedFile instanceof UploadedFile) {
-            return $this->json(['message' => 'imageFile must be an uploaded file.'], Response::HTTP_BAD_REQUEST);
-        }
-
         try {
-            $image = $this->imageService->updateImage($id, is_null($newName) ? null : (string) $newName, $uploadedFile);
+            $dto = $this->imageService->updateImage($id, $request->request, $request->files);
         } catch (InvalidArgumentException $exception) {
             return $this->json(['message' => $exception->getMessage()], Response::HTTP_BAD_REQUEST);
         } catch (AccessDeniedException $exception) {
@@ -100,8 +89,6 @@ final class UploadedImageController extends AbstractController
         } catch (ResourceNotFoundException $exception) {
             return $this->json(['message' => $exception->getMessage()], Response::HTTP_NOT_FOUND);
         }
-
-        $dto = $this->dtoFactory->readDtoFromEntity($image);
 
         return $this->json($dto);
     }

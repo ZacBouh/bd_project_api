@@ -3,6 +3,8 @@
 namespace App\Service;
 
 use App\Contract\Entity\HasUploadedImagesInterface;
+use App\DTO\UploadedImage\UploadedImageDTOFactory;
+use App\DTO\UploadedImage\UploadedImageReadDTO;
 use App\Entity\Artist;
 use App\Entity\Copy;
 use App\Entity\Publisher;
@@ -10,6 +12,7 @@ use App\Entity\PublisherCollection;
 use App\Entity\Series;
 use App\Entity\Title;
 use App\Entity\UploadedImage;
+use App\Mapper\UploadedImageEntityMapper;
 use App\Repository\UploadedImageRepository;
 use App\Security\Role;
 use Doctrine\ORM\EntityManagerInterface;
@@ -18,6 +21,7 @@ use Psr\Log\LoggerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\FileBag;
+use Symfony\Component\HttpFoundation\InputBag;
 use Symfony\Component\Routing\Exception\ResourceNotFoundException;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
@@ -38,26 +42,28 @@ class UploadedImageService
     public function __construct(
         private EntityManagerInterface $entityManager,
         private UploadedImageRepository $imageRepository,
+        private UploadedImageEntityMapper $imageMapper,
+        private UploadedImageDTOFactory $dtoFactory,
         private Security $security,
         private LoggerInterface $logger,
     ) {}
 
-    public function saveUploadedCoverImage(HasUploadedImagesInterface $entity, FileBag $files, string $imageName = "Cover Image"): void
+    public function saveUploadedCoverImage(HasUploadedImagesInterface $entity, FileBag $files, string $imageName = 'Cover Image'): void
     {
         $file = $files->get('coverImageFile');
         if (is_null($file)) {
             return;
         }
         if (!$file instanceof UploadedFile) {
-            throw new InvalidArgumentException("File argument passed to saveUploadedCoverImage is not a FileBag");
+            throw new InvalidArgumentException('File argument passed to saveUploadedCoverImage is not a FileBag');
         }
         $coverImage = $this->saveUploadedImage($file, $imageName);
         $entity->setCoverImage($coverImage);
     }
 
-    public function saveUploadedImage(UploadedFile $file, string $imageName = "unnamed"): UploadedImage
+    public function saveUploadedImage(UploadedFile $file, string $imageName = 'unnamed'): UploadedImage
     {
-        $image =  (new UploadedImage())
+        $image = (new UploadedImage())
             ->setFile($file)
             ->setImageName($imageName);
         $this->entityManager->persist($image);
@@ -66,7 +72,7 @@ class UploadedImageService
     }
 
     /**
-     * @return list<UploadedImage>
+     * @return list<UploadedImageReadDTO>
      */
     public function getAllImages(): array
     {
@@ -78,40 +84,28 @@ class UploadedImageService
             ->getQuery()
             ->getResult();
 
-        return $images;
+        return array_map(fn(UploadedImage $image) => $this->dtoFactory->readDtoFromEntity($image), $images);
     }
 
-    public function updateImage(int $imageId, ?string $imageName = null, ?UploadedFile $file = null): UploadedImage
+    public function updateImage(int $imageId, InputBag $inputBag, FileBag $files): UploadedImageReadDTO
     {
         $this->assertAdminAccess();
 
-        $image = $this->findImageOrFail($imageId);
+        $inputBag->set('id', $imageId);
+        $dto = $this->dtoFactory->writeDtoFromInputBag($inputBag, $files);
 
-        $hasChanges = false;
-        if (!is_null($imageName)) {
-            $trimmed = trim($imageName);
-            if ($trimmed === '') {
-                throw new InvalidArgumentException('imageName cannot be empty.');
-            }
-            $image->setImageName($trimmed);
-            $hasChanges = true;
-        }
-
-        if (!is_null($file)) {
-            $image->setFile($file);
-            $hasChanges = true;
-        }
-
-        if (!$hasChanges) {
+        if (!$dto->hasImageNameUpdate && is_null($dto->imageFile)) {
             throw new InvalidArgumentException('No modification provided for the uploaded image.');
         }
+
+        $image = $this->imageMapper->fromWriteDTO($dto);
 
         $this->logger->info(sprintf('Updating uploaded image %d', $imageId));
 
         $this->entityManager->persist($image);
         $this->entityManager->flush();
 
-        return $image;
+        return $this->dtoFactory->readDtoFromEntity($image);
     }
 
     /**
