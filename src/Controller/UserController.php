@@ -80,6 +80,7 @@ final class UserController extends AbstractController
                             nullable: true
                         ),
                         new OA\Property(property: 'googleSub', type: 'string', nullable: true),
+                        new OA\Property(property: 'emailVerified', type: 'boolean', nullable: true),
                     ]
                 )
             )

@@ -82,6 +82,10 @@ class UserManagerService
             $dto->googleSub = $user->getGoogleSub();
         }
 
+        if (is_null($dto->emailVerified)) {
+            $dto->emailVerified = $user->getEmailVerified();
+        }
+
         $this->logger->debug(sprintf('Updating user %d', $dto->id));
 
         /** @var User $user */

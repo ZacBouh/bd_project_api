@@ -4,6 +4,7 @@ namespace App\DTO\User;
 
 use App\DTO\Builder\AbstractDTOFactory;
 use App\Entity\User;
+use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\FileBag;
 use Symfony\Component\HttpFoundation\InputBag;
 
@@ -16,6 +17,22 @@ class UserDTOFactory extends AbstractDTOFactory
     {
         $password = trim($inputBag->getString('password'));
         $googleSub = trim($inputBag->getString('googleSub'));
+        $emailVerified = null;
+        $rawEmailVerified = $inputBag->get('emailVerified');
+        if ($rawEmailVerified !== null && $rawEmailVerified !== '') {
+            if (is_array($rawEmailVerified)) {
+                throw new InvalidArgumentException('emailVerified must be a boolean value');
+            }
+
+            $normalizedEmailVerified = filter_var($rawEmailVerified, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            if (!is_bool($normalizedEmailVerified)) {
+                throw new InvalidArgumentException('emailVerified must be a boolean value');
+            }
+
+            $emailVerified = $normalizedEmailVerified;
+        } elseif ($rawEmailVerified === '' && $inputBag->has('emailVerified')) {
+            $emailVerified = null;
+        }
 
         $dto = new UserWriteDTO(
             $this->getIdInput($inputBag),
@@ -24,6 +41,7 @@ class UserDTOFactory extends AbstractDTOFactory
             $password !== '' ? $password : null,
             $this->getArray($inputBag, 'roles'),
             $googleSub !== '' ? $googleSub : null,
+            $emailVerified,
         );
 
         return $dto;
@@ -56,6 +74,7 @@ class UserDTOFactory extends AbstractDTOFactory
             $email,
             $entity->getRoles(),
             $entity->getGoogleSub(),
+            $entity->getEmailVerified(),
         );
 
         return $dto;

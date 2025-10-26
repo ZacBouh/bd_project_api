@@ -14,5 +14,6 @@ class UserWriteDTO
         public ?string $password,
         public ?array $roles,
         public ?string $googleSub,
+        public ?bool $emailVerified,
     ) {}
 }

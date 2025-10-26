@@ -13,5 +13,6 @@ class UserReadDTO
         public string $email,
         public array $roles,
         public ?string $googleSub,
+        public bool $emailVerified,
     ) {}
 }

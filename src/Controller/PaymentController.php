@@ -212,14 +212,22 @@ class PaymentController extends AbstractController
             }
         }
 
-        $rawStatuses = $request->query->all('status');
-        if ($rawStatuses === []) {
-            $singleStatus = $request->query->get('status');
-            if (is_string($singleStatus) && $singleStatus !== '') {
-                $rawStatuses = array_map('trim', explode(',', $singleStatus));
-            } elseif (is_array($singleStatus)) {
-                $rawStatuses = $singleStatus;
+        $statusParameter = $request->query->get('status');
+        $rawStatuses = [];
+        if (is_string($statusParameter)) {
+            if ($statusParameter !== '') {
+                $rawStatuses = array_map('trim', explode(',', $statusParameter));
             }
+        } elseif (is_array($statusParameter)) {
+            foreach ($statusParameter as $statusValue) {
+                if (!is_string($statusValue)) {
+                    return new JsonResponse(['error' => 'status must be provided as strings'], Response::HTTP_BAD_REQUEST);
+                }
+
+                $rawStatuses[] = trim($statusValue);
+            }
+        } elseif ($statusParameter !== null) {
+            return new JsonResponse(['error' => 'status must be a string or array of strings'], Response::HTTP_BAD_REQUEST);
         }
 
         $statuses = [];
