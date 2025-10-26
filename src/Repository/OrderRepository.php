@@ -37,8 +37,11 @@ class OrderRepository extends ServiceEntityRepository
             ->leftJoin('items.seller', 'seller')->addSelect('seller')
             ->leftJoin('o.payoutTasks', 'payoutTasks')->addSelect('payoutTasks')
             ->where('o.orderRef = :orderRef')
-            ->setParameter('orderRef', $orderRef)
-            ->setMaxResults(1);
+            ->setParameter('orderRef', $orderRef);
+
+        // Do not add a LIMIT here: Doctrine will silently drop joined rows when using
+        // fetch joins on to-many associations with a max result, which would cause
+        // partially loaded orders missing some items.
 
         if ($buyer instanceof User) {
             $qb->andWhere('o.user = :buyer')
