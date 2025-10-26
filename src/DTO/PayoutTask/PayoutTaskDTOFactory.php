@@ -4,6 +4,7 @@ namespace App\DTO\PayoutTask;
 
 use App\DTO\Builder\AbstractDTOFactory;
 use App\Entity\Order;
+use App\Entity\OrderItem;
 use App\Entity\PayoutTask;
 use App\Entity\User;
 use App\Enum\PayoutTaskStatus;
@@ -38,9 +39,19 @@ class PayoutTaskDTOFactory extends AbstractDTOFactory
             $orderRef = $order->getOrderRef();
         }
 
+        $orderItemId = null;
+        $orderItemName = null;
+        $orderItem = $entity->getOrderItem();
+        if ($orderItem instanceof OrderItem) {
+            $orderItemId = $orderItem->getId();
+            $orderItemName = $orderItem->getCopy()?->getTitle()?->getName();
+        }
+
         return new PayoutTaskReadDTO(
             $entity->getId(),
             $orderRef,
+            $orderItemId,
+            $orderItemName,
             $sellerSummary,
             $entity->getAmount(),
             $entity->getCurrency()->value,

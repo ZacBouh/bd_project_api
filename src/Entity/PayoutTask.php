@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Entity\OrderItem;
 use App\Enum\PayoutTaskPaymentType;
 use App\Enum\PayoutTaskStatus;
 use App\Enum\PriceCurrency;
@@ -22,6 +23,10 @@ class PayoutTask
     #[ORM\ManyToOne(inversedBy: 'payoutTasks')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private ?Order $order = null;
+
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'CASCADE')]
+    private ?OrderItem $orderItem = null;
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
@@ -66,6 +71,18 @@ class PayoutTask
     public function setOrder(?Order $order): self
     {
         $this->order = $order;
+
+        return $this;
+    }
+
+    public function getOrderItem(): ?OrderItem
+    {
+        return $this->orderItem;
+    }
+
+    public function setOrderItem(?OrderItem $orderItem): self
+    {
+        $this->orderItem = $orderItem;
 
         return $this;
     }

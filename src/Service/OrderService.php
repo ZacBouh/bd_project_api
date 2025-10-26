@@ -244,40 +244,36 @@ class OrderService
             return;
         }
 
-        $payoutTask = $this->payoutTaskRepository->findOneByOrderAndSeller($order, $seller, PayoutTaskPaymentType::ORDER);
+        $payoutTask = $this->payoutTaskRepository->findOneByOrderItem($item);
+
+        $isNewTask = false;
         if ($payoutTask === null) {
             $payoutTask = (new PayoutTask())
                 ->setOrder($order)
+                ->setOrderItem($item)
                 ->setSeller($seller)
                 ->setStatus(PayoutTaskStatus::PENDING_PAYMENT_INFORMATION)
                 ->setCurrency($item->getCurrency())
                 ->setPaymentType(PayoutTaskPaymentType::ORDER);
             $order->addPayoutTask($payoutTask);
             $this->entityManager->persist($payoutTask);
-        }
-
-        $confirmedAmount = 0;
-        $hasPreviousConfirmation = false;
-        foreach ($order->getItems() as $orderItem) {
-            if ($orderItem->getSeller()?->getId() !== $seller->getId()) {
-                continue;
+            $isNewTask = true;
+        } else {
+            if ($payoutTask->getSeller()?->getId() !== $seller->getId()) {
+                $payoutTask->setSeller($seller);
             }
-
-            if ($orderItem->getStatus() === OrderItemStatus::BUYER_CONFIRMED) {
-                if ($orderItem !== $item) {
-                    $hasPreviousConfirmation = true;
-                }
-                $confirmedAmount += $orderItem->getPrice();
+            if ($payoutTask->getPaymentType() !== PayoutTaskPaymentType::ORDER) {
+                $payoutTask->setPaymentType(PayoutTaskPaymentType::ORDER);
             }
         }
 
-        $payoutTask->setAmount($confirmedAmount);
+        $payoutTask->setAmount($item->getPrice());
 
         if ($payoutTask->getCurrency() !== $item->getCurrency()) {
             $payoutTask->setCurrency($item->getCurrency());
         }
 
-        if ($confirmedAmount > 0 && !$hasPreviousConfirmation) {
+        if ($isNewTask) {
             $this->notifySellerForPaymentInformation($order, $item, $buyer, $payoutTask);
         }
     }
@@ -344,10 +340,11 @@ class OrderService
         $buyerName = $buyer->getPseudo() ?? $buyer->getEmail() ?? 'un acheteur';
         $currencyLabel = $task->getCurrency()->label();
         $amount = number_format($task->getAmount() / 100, 2, ',', ' ');
+        $itemAmount = number_format($item->getPrice() / 100, 2, ',', ' ');
 
         $content = <<<HTML
 <p>Bonjour {$seller->getPseudo()},</p>
-<p>{$buyerName} vient de confirmer la remise de {$copyTitle}. Afin que nous puissions procéder à votre versement de {$amount} {$currencyLabel}, merci de répondre à cet e-mail en nous communiquant vos informations de paiement (IBAN, titulaire, etc.).</p>
+<p>{$buyerName} vient de confirmer la remise de {$copyTitle} pour un montant de {$itemAmount} {$currencyLabel}. Afin que nous puissions procéder à votre versement de {$amount} {$currencyLabel}, merci de répondre à cet e-mail en nous communiquant vos informations de paiement (IBAN, titulaire, etc.).</p>
 <p>Référence de commande : <strong>{$order->getOrderRef()}</strong></p>
 <p>Merci !</p>
 HTML;
@@ -365,8 +362,9 @@ HTML;
         $adminEmail = $_ENV['PAYOUT_NOTIFICATION_EMAIL'] ?? null;
         if (is_string($adminEmail) && $adminEmail !== '') {
             $adminCurrency = $task->getCurrency()->label();
+            $adminItemAmount = number_format($item->getPrice() / 100, 2, ',', ' ');
             $adminContent = <<<TEXT
-Le vendeur {$seller->getPseudo()} ({$sellerEmail}) a reçu une demande d'informations de paiement suite à la confirmation de la commande {$order->getOrderRef()} par {$buyerName}.
+Le vendeur {$seller->getPseudo()} ({$sellerEmail}) a reçu une demande d'informations de paiement suite à la confirmation de la commande {$order->getOrderRef()} par {$buyerName} pour {$copyTitle} ({$adminItemAmount} {$adminCurrency}).
 Montant total estimé : {$amount} {$adminCurrency}.
 TEXT;
 

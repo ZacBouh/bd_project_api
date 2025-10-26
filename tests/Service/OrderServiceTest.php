@@ -37,7 +37,7 @@ final class OrderServiceTest extends TestCase
 
         $payoutTaskRepository = $this->createMock(PayoutTaskRepository::class);
         $payoutTaskRepository->expects(self::once())
-            ->method('findOneByOrderAndSeller')
+            ->method('findOneByOrderItem')
             ->willReturn(null);
 
         $mailer = $this->createMock(MailerService::class);
@@ -75,6 +75,7 @@ final class OrderServiceTest extends TestCase
         self::assertInstanceOf(PayoutTask::class, $storedTask);
         self::assertSame(PayoutTaskPaymentType::ORDER, $storedTask->getPaymentType());
         self::assertSame(1500, $storedTask->getAmount());
+        self::assertSame($item, $storedTask->getOrderItem());
     }
 
     public function testConfirmingMultipleItemsDoesNotSendDuplicateEmails(): void
@@ -83,24 +84,22 @@ final class OrderServiceTest extends TestCase
 
         /** @var EntityManagerInterface&MockObject $entityManager */
         $entityManager = $this->createMock(EntityManagerInterface::class);
-        $storedTask = null;
-        $entityManager->expects(self::once())
+        $storedTasks = [];
+        $entityManager->expects(self::exactly(2))
             ->method('persist')
-            ->willReturnCallback(static function ($task) use (&$storedTask): void {
-                $storedTask = $task;
+            ->willReturnCallback(static function ($task) use (&$storedTasks): void {
+                $storedTasks[] = $task;
             });
         $entityManager->expects(self::exactly(2))
             ->method('flush');
 
         $payoutTaskRepository = $this->createMock(PayoutTaskRepository::class);
         $payoutTaskRepository->expects(self::exactly(2))
-            ->method('findOneByOrderAndSeller')
-            ->willReturnCallback(static function () use (&$storedTask) {
-                return $storedTask;
-            });
+            ->method('findOneByOrderItem')
+            ->willReturn(null);
 
         $mailer = $this->createMock(MailerService::class);
-        $mailer->expects(self::once())
+        $mailer->expects(self::exactly(2))
             ->method('sendMail');
 
         $logger = $this->createMock(LoggerInterface::class);
@@ -136,14 +135,18 @@ final class OrderServiceTest extends TestCase
 
         $service->confirmOrderItem($order, $firstItem, $buyer);
         self::assertSame(OrderPaymentStatus::IN_PROGRESS_PARTIAL, $order->getStatus());
-        self::assertInstanceOf(PayoutTask::class, $storedTask);
-        self::assertSame(1000, $storedTask->getAmount());
+        self::assertCount(1, $storedTasks);
+        self::assertInstanceOf(PayoutTask::class, $storedTasks[0]);
+        self::assertSame(1000, $storedTasks[0]->getAmount());
+        self::assertSame($firstItem, $storedTasks[0]->getOrderItem());
 
         $service->confirmOrderItem($order, $secondItem, $buyer);
         self::assertSame(OrderPaymentStatus::COMPLETED, $order->getStatus());
-        self::assertInstanceOf(PayoutTask::class, $storedTask);
-        self::assertSame(PayoutTaskPaymentType::ORDER, $storedTask->getPaymentType());
-        self::assertSame(3000, $storedTask->getAmount());
+        self::assertCount(2, $storedTasks);
+        self::assertInstanceOf(PayoutTask::class, $storedTasks[1]);
+        self::assertSame(PayoutTaskPaymentType::ORDER, $storedTasks[1]->getPaymentType());
+        self::assertSame(2000, $storedTasks[1]->getAmount());
+        self::assertSame($secondItem, $storedTasks[1]->getOrderItem());
     }
 
     public function testOrderStaysInProgressUntilAllItemsResolved(): void
@@ -165,7 +168,7 @@ final class OrderServiceTest extends TestCase
 
         $payoutTaskRepository = $this->createMock(PayoutTaskRepository::class);
         $payoutTaskRepository->expects(self::once())
-            ->method('findOneByOrderAndSeller')
+            ->method('findOneByOrderItem')
             ->willReturn(null);
         $payoutTaskRepository->expects(self::exactly(2))
             ->method('findOneByOrderAndPaymentType')
@@ -237,7 +240,7 @@ final class OrderServiceTest extends TestCase
 
         $payoutTaskRepository = $this->createMock(PayoutTaskRepository::class);
         $payoutTaskRepository->expects(self::never())
-            ->method('findOneByOrderAndSeller');
+            ->method('findOneByOrderItem');
         $payoutTaskRepository->expects(self::once())
             ->method('findOneByOrderAndPaymentType')
             ->willReturn(null);

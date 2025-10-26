@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Entity\Order;
+use App\Entity\OrderItem;
 use App\Entity\PayoutTask;
 use App\Entity\User;
 use App\Enum\PayoutTaskPaymentType;
@@ -22,16 +23,10 @@ class PayoutTaskRepository extends ServiceEntityRepository
         parent::__construct($registry, PayoutTask::class);
     }
 
-    public function findOneByOrderAndSeller(
-        Order $order,
-        User $seller,
-        PayoutTaskPaymentType $paymentType = PayoutTaskPaymentType::ORDER
-    ): ?PayoutTask
+    public function findOneByOrderItem(OrderItem $orderItem): ?PayoutTask
     {
         return $this->findOneBy([
-            'order' => $order,
-            'seller' => $seller,
-            'paymentType' => $paymentType,
+            'orderItem' => $orderItem,
         ]);
     }
 

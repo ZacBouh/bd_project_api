@@ -17,6 +17,12 @@ class PayoutTaskReadDTO
         #[OA\Property(example: 'o_7G9KX', nullable: true)]
         public ?string $orderRef,
 
+        #[OA\Property(example: 42, nullable: true)]
+        public ?int $orderItemId,
+
+        #[OA\Property(example: 'Daredevil Tome 2', nullable: true)]
+        public ?string $orderItemName,
+
         #[OA\Property(
             nullable: true,
             type: 'object',
