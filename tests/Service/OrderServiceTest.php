@@ -74,6 +74,7 @@ final class OrderServiceTest extends TestCase
         self::assertSame(OrderPaymentStatus::COMPLETED, $order->getStatus());
         self::assertInstanceOf(PayoutTask::class, $storedTask);
         self::assertSame(PayoutTaskPaymentType::ORDER, $storedTask->getPaymentType());
+        self::assertSame(1500, $storedTask->getAmount());
     }
 
     public function testConfirmingMultipleItemsDoesNotSendDuplicateEmails(): void
@@ -135,11 +136,14 @@ final class OrderServiceTest extends TestCase
 
         $service->confirmOrderItem($order, $firstItem, $buyer);
         self::assertSame(OrderPaymentStatus::IN_PROGRESS_PARTIAL, $order->getStatus());
+        self::assertInstanceOf(PayoutTask::class, $storedTask);
+        self::assertSame(1000, $storedTask->getAmount());
 
         $service->confirmOrderItem($order, $secondItem, $buyer);
         self::assertSame(OrderPaymentStatus::COMPLETED, $order->getStatus());
         self::assertInstanceOf(PayoutTask::class, $storedTask);
         self::assertSame(PayoutTaskPaymentType::ORDER, $storedTask->getPaymentType());
+        self::assertSame(3000, $storedTask->getAmount());
     }
 
     public function testOrderStaysInProgressUntilAllItemsResolved(): void

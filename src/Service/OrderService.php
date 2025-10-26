@@ -257,16 +257,12 @@ class OrderService
         }
 
         $confirmedAmount = 0;
-        $totalAmount = 0;
         $hasPreviousConfirmation = false;
         foreach ($order->getItems() as $orderItem) {
             if ($orderItem->getSeller()?->getId() !== $seller->getId()) {
                 continue;
             }
 
-            if ($orderItem->getStatus() !== OrderItemStatus::CANCELED) {
-                $totalAmount += $orderItem->getPrice();
-            }
             if ($orderItem->getStatus() === OrderItemStatus::BUYER_CONFIRMED) {
                 if ($orderItem !== $item) {
                     $hasPreviousConfirmation = true;
@@ -275,7 +271,7 @@ class OrderService
             }
         }
 
-        $payoutTask->setAmount($totalAmount);
+        $payoutTask->setAmount($confirmedAmount);
 
         if ($payoutTask->getCurrency() !== $item->getCurrency()) {
             $payoutTask->setCurrency($item->getCurrency());
