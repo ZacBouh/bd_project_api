@@ -4,7 +4,7 @@ namespace App\Controller;
 
 use App\DTO\UploadedImage\UploadedImageDTOFactory;
 use App\DTO\UploadedImage\UploadedImageReadDTO;
-use App\Service\UploadedImageAdminService;
+use App\Service\UploadedImageService;
 use InvalidArgumentException;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
@@ -20,11 +20,11 @@ use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 final class UploadedImageController extends AbstractController
 {
     public function __construct(
-        private UploadedImageAdminService $imageService,
+        private UploadedImageService $imageService,
         private UploadedImageDTOFactory $dtoFactory,
     ) {}
 
-    #[Route('/api/admin/uploaded-images', name: 'admin_uploaded_images_list', methods: 'GET')]
+    #[Route('/api/uploaded-images', name: 'uploaded_images_list', methods: 'GET')]
     #[OA\Get(
         summary: 'Récupérer toutes les images téléversées',
         tags: ['Uploaded Images'],
@@ -53,7 +53,7 @@ final class UploadedImageController extends AbstractController
         return $this->json($dtos);
     }
 
-    #[Route('/api/admin/uploaded-images/{id}', name: 'admin_uploaded_images_update', requirements: ['id' => '\\d+'], methods: 'PATCH')]
+    #[Route('/api/uploaded-images/{id}', name: 'uploaded_images_update', requirements: ['id' => '\\d+'], methods: 'PATCH')]
     #[OA\Patch(
         summary: 'Mettre à jour une image téléversée',
         tags: ['Uploaded Images'],
@@ -106,7 +106,7 @@ final class UploadedImageController extends AbstractController
         return $this->json($dto);
     }
 
-    #[Route('/api/admin/uploaded-images', name: 'admin_uploaded_images_remove', methods: 'DELETE')]
+    #[Route('/api/uploaded-images', name: 'uploaded_images_remove', methods: 'DELETE')]
     #[OA\Delete(
         summary: 'Supprimer des images téléversées',
         tags: ['Uploaded Images'],
