@@ -189,6 +189,101 @@ class OrderController extends AbstractController
         return $this->json($dto, Response::HTTP_OK);
     }
 
+    #[Route('/cancel', name: 'orders_cancel_item', methods: ['POST'])]
+    #[OA\Post(
+        summary: 'Annuler l\'achat d’un exemplaire',
+        tags: ['Orders'],
+        parameters: [
+            new OA\Parameter(name: 'orderRef', in: 'query', required: true, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'itemId', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: Response::HTTP_OK, description: 'Commande mise à jour.'),
+            new OA\Response(response: Response::HTTP_BAD_REQUEST, description: 'Commande invalide.'),
+            new OA\Response(response: Response::HTTP_NOT_FOUND, description: 'Élément de commande introuvable.'),
+            new OA\Response(response: Response::HTTP_UNAUTHORIZED, description: 'Utilisateur non authentifié.'),
+        ]
+    )]
+    public function cancelItem(Request $request): JsonResponse
+    {
+        $user = $this->getAuthenticatedUser();
+        if ($user === null) {
+            return new JsonResponse(['error' => 'Authentication required'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $orderRef = $request->query->get('orderRef');
+        $itemIdRaw = $request->query->get('itemId');
+
+        if (!is_string($orderRef) || $orderRef === '') {
+            return new JsonResponse(['error' => 'orderRef is required'], Response::HTTP_BAD_REQUEST);
+        }
+
+        if ($itemIdRaw === null || filter_var($itemIdRaw, FILTER_VALIDATE_INT) === false) {
+            return new JsonResponse(['error' => 'itemId must be an integer'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $itemId = (int) $itemIdRaw;
+
+        $order = $this->orderRepository->findOneForBuyer($orderRef, $user);
+        if ($order === null) {
+            return new JsonResponse(['error' => 'Order not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $orderItem = $this->orderService->findOrderItem($order, $itemId);
+        if ($orderItem === null) {
+            return new JsonResponse(['error' => 'Order item not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        try {
+            $this->orderService->cancelOrderItem($orderItem, $user);
+        } catch (LogicException $exception) {
+            return new JsonResponse(['error' => $exception->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
+
+        /** @var OrderReadDTO $dto */
+        $dto = $this->orderDTOFactory->readDtoFromEntity($order);
+
+        return $this->json($dto, Response::HTTP_OK);
+    }
+
+    #[Route('/{orderRef}/cancel', name: 'orders_cancel', methods: ['POST'])]
+    #[OA\Post(
+        summary: 'Annuler une commande',
+        tags: ['Orders'],
+        parameters: [
+            new OA\Parameter(name: 'orderRef', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: Response::HTTP_OK, description: 'Commande annulée.'),
+            new OA\Response(response: Response::HTTP_BAD_REQUEST, description: 'Commande invalide.'),
+            new OA\Response(response: Response::HTTP_NOT_FOUND, description: 'Commande introuvable.'),
+            new OA\Response(response: Response::HTTP_UNAUTHORIZED, description: 'Utilisateur non authentifié.'),
+        ]
+    )]
+    public function cancelOrder(string $orderRef): JsonResponse
+    {
+        $user = $this->getAuthenticatedUser();
+        if ($user === null) {
+            return new JsonResponse(['error' => 'Authentication required'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $order = $this->orderRepository->findOneForBuyer($orderRef, $user);
+        if ($order === null) {
+            return new JsonResponse(['error' => 'Order not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        try {
+            $this->orderService->cancelOrder($order, $user);
+        } catch (LogicException $exception) {
+            return new JsonResponse(['error' => $exception->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
+
+        /** @var OrderReadDTO $dto */
+        $dto = $this->orderDTOFactory->readDtoFromEntity($order);
+
+        return $this->json($dto, Response::HTTP_OK);
+    }
+
     private function getAuthenticatedUser(): ?User
     {
         $user = $this->getUser();

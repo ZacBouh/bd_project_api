@@ -36,6 +36,9 @@ class PayoutTaskReadDTO
         #[OA\Property(example: 'PENDING_PAYMENT_INFORMATION')]
         public string $status,
 
+        #[OA\Property(example: 'ORDER')]
+        public string $paymentType,
+
         #[OA\Property(nullable: true, type: 'object')]
         public ?array $paymentInformation,
 

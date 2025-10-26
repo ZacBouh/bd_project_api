@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Enum\PayoutTaskPaymentType;
 use App\Enum\PayoutTaskStatus;
 use App\Enum\PriceCurrency;
 use App\Repository\PayoutTaskRepository;
@@ -34,6 +35,9 @@ class PayoutTask
 
     #[ORM\Column(length: 32, enumType: PayoutTaskStatus::class)]
     private PayoutTaskStatus $status = PayoutTaskStatus::PENDING_PAYMENT_INFORMATION;
+
+    #[ORM\Column(length: 16, enumType: PayoutTaskPaymentType::class)]
+    private PayoutTaskPaymentType $paymentType = PayoutTaskPaymentType::ORDER;
 
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $paymentInformation = null;
@@ -110,6 +114,18 @@ class PayoutTask
     public function setStatus(PayoutTaskStatus $status): self
     {
         $this->status = $status;
+
+        return $this;
+    }
+
+    public function getPaymentType(): PayoutTaskPaymentType
+    {
+        return $this->paymentType;
+    }
+
+    public function setPaymentType(PayoutTaskPaymentType $paymentType): self
+    {
+        $this->paymentType = $paymentType;
 
         return $this;
     }

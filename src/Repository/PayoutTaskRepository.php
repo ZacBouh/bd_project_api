@@ -7,6 +7,7 @@ namespace App\Repository;
 use App\Entity\Order;
 use App\Entity\PayoutTask;
 use App\Entity\User;
+use App\Enum\PayoutTaskPaymentType;
 use App\Enum\PayoutTaskStatus;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -21,11 +22,24 @@ class PayoutTaskRepository extends ServiceEntityRepository
         parent::__construct($registry, PayoutTask::class);
     }
 
-    public function findOneByOrderAndSeller(Order $order, User $seller): ?PayoutTask
+    public function findOneByOrderAndSeller(
+        Order $order,
+        User $seller,
+        PayoutTaskPaymentType $paymentType = PayoutTaskPaymentType::ORDER
+    ): ?PayoutTask
     {
         return $this->findOneBy([
             'order' => $order,
             'seller' => $seller,
+            'paymentType' => $paymentType,
+        ]);
+    }
+
+    public function findOneByOrderAndPaymentType(Order $order, PayoutTaskPaymentType $paymentType): ?PayoutTask
+    {
+        return $this->findOneBy([
+            'order' => $order,
+            'paymentType' => $paymentType,
         ]);
     }
 

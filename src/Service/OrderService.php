@@ -11,7 +11,9 @@ use App\Entity\PayoutTask;
 use App\Entity\User;
 use App\Enum\OrderItemStatus;
 use App\Enum\OrderPaymentStatus;
+use App\Enum\PayoutTaskPaymentType;
 use App\Enum\PayoutTaskStatus;
+use App\Enum\PriceCurrency;
 use App\Repository\PayoutTaskRepository;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
@@ -48,6 +50,65 @@ class OrderService
 
         $this->updateOrderStatus($order);
         $this->updatePayoutTaskForItem($item, $buyer);
+
+        $this->entityManager->flush();
+    }
+
+    public function cancelOrderItem(OrderItem $item, User $buyer): void
+    {
+        $order = $item->getOrder();
+        if ($order === null) {
+            throw new LogicException('Order item must be attached to an order.');
+        }
+
+        $orderBuyer = $order->getUser();
+        if ($orderBuyer === null || $orderBuyer->getId() !== $buyer->getId()) {
+            throw new LogicException('This order item does not belong to the provided buyer.');
+        }
+
+        if (!$this->cancelOrderItemInternal($item)) {
+            return;
+        }
+
+        $this->updateOrderStatus($order);
+        $this->updateRefundPayoutTask($order);
+
+        $this->entityManager->flush();
+    }
+
+    public function cancelOrder(Order $order, User $buyer): void
+    {
+        $orderBuyer = $order->getUser();
+        if ($orderBuyer === null || $orderBuyer->getId() !== $buyer->getId()) {
+            throw new LogicException('This order does not belong to the provided buyer.');
+        }
+
+        $hasConfirmedItem = false;
+        $hasUpdatedItem = false;
+        foreach ($order->getItems() as $orderItem) {
+            if ($orderItem->getStatus() === OrderItemStatus::BUYER_CONFIRMED) {
+                $hasConfirmedItem = true;
+
+                break;
+            }
+        }
+
+        if ($hasConfirmedItem) {
+            throw new LogicException('Cannot cancel an order that already has confirmed items.');
+        }
+
+        foreach ($order->getItems() as $orderItem) {
+            if ($this->cancelOrderItemInternal($orderItem)) {
+                $hasUpdatedItem = true;
+            }
+        }
+
+        if (!$hasUpdatedItem) {
+            return;
+        }
+
+        $this->updateOrderStatus($order);
+        $this->updateRefundPayoutTask($order);
 
         $this->entityManager->flush();
     }
@@ -105,6 +166,21 @@ class OrderService
         return $task;
     }
 
+    private function cancelOrderItemInternal(OrderItem $item): bool
+    {
+        if ($item->getStatus() === OrderItemStatus::BUYER_CONFIRMED) {
+            throw new LogicException('Cannot cancel an order item that has already been confirmed.');
+        }
+
+        if ($item->getStatus() === OrderItemStatus::CANCELED) {
+            return false;
+        }
+
+        $item->markBuyerCanceled();
+
+        return true;
+    }
+
     private function updateOrderStatus(Order $order): void
     {
         $items = $order->getItems();
@@ -114,30 +190,41 @@ class OrderService
             return;
         }
 
-        $allConfirmed = true;
-        $anyConfirmed = false;
+        $pendingCount = 0;
+        $confirmedCount = 0;
+        $canceledCount = 0;
+
         foreach ($items as $orderItem) {
-            if ($orderItem->getStatus() === OrderItemStatus::BUYER_CONFIRMED) {
-                $anyConfirmed = true;
+            $status = $orderItem->getStatus();
+
+            if ($status === OrderItemStatus::BUYER_CONFIRMED) {
+                ++$confirmedCount;
+
                 continue;
             }
 
-            $allConfirmed = false;
+            if ($status === OrderItemStatus::CANCELED) {
+                ++$canceledCount;
+
+                continue;
+            }
+
+            ++$pendingCount;
         }
 
-        if ($allConfirmed) {
-            $order->setStatus(OrderPaymentStatus::COMPLETED);
+        if ($pendingCount > 0) {
+            $order->setStatus(($confirmedCount > 0 || $canceledCount > 0) ? OrderPaymentStatus::IN_PROGRESS_PARTIAL : OrderPaymentStatus::PAID_PENDING_HANDOVER);
 
             return;
         }
 
-        if ($anyConfirmed) {
-            $order->setStatus(OrderPaymentStatus::IN_PROGRESS_PARTIAL);
+        if ($confirmedCount === 0) {
+            $order->setStatus($canceledCount > 0 ? OrderPaymentStatus::CANCELED : OrderPaymentStatus::PAID_PENDING_HANDOVER);
 
             return;
         }
 
-        $order->setStatus(OrderPaymentStatus::PAID_PENDING_HANDOVER);
+        $order->setStatus(OrderPaymentStatus::COMPLETED);
     }
 
     private function updatePayoutTaskForItem(OrderItem $item, User $buyer): void
@@ -149,13 +236,14 @@ class OrderService
             return;
         }
 
-        $payoutTask = $this->payoutTaskRepository->findOneByOrderAndSeller($order, $seller);
+        $payoutTask = $this->payoutTaskRepository->findOneByOrderAndSeller($order, $seller, PayoutTaskPaymentType::ORDER);
         if ($payoutTask === null) {
             $payoutTask = (new PayoutTask())
                 ->setOrder($order)
                 ->setSeller($seller)
                 ->setStatus(PayoutTaskStatus::PENDING_PAYMENT_INFORMATION)
-                ->setCurrency($item->getCurrency());
+                ->setCurrency($item->getCurrency())
+                ->setPaymentType(PayoutTaskPaymentType::ORDER);
             $order->addPayoutTask($payoutTask);
             $this->entityManager->persist($payoutTask);
         }
@@ -168,7 +256,9 @@ class OrderService
                 continue;
             }
 
-            $totalAmount += $orderItem->getPrice();
+            if ($orderItem->getStatus() !== OrderItemStatus::CANCELED) {
+                $totalAmount += $orderItem->getPrice();
+            }
             if ($orderItem->getStatus() === OrderItemStatus::BUYER_CONFIRMED) {
                 if ($orderItem !== $item) {
                     $hasPreviousConfirmation = true;
@@ -177,9 +267,7 @@ class OrderService
             }
         }
 
-        if ($totalAmount > 0) {
-            $payoutTask->setAmount($totalAmount);
-        }
+        $payoutTask->setAmount($totalAmount);
 
         if ($payoutTask->getCurrency() !== $item->getCurrency()) {
             $payoutTask->setCurrency($item->getCurrency());
@@ -188,6 +276,46 @@ class OrderService
         if ($confirmedAmount > 0 && !$hasPreviousConfirmation) {
             $this->notifySellerForPaymentInformation($order, $item, $buyer, $payoutTask);
         }
+    }
+
+    private function updateRefundPayoutTask(Order $order): void
+    {
+        $canceledAmount = 0;
+        $currency = $order->getCurrency();
+        foreach ($order->getItems() as $orderItem) {
+            if ($orderItem->getStatus() !== OrderItemStatus::CANCELED) {
+                continue;
+            }
+
+            $canceledAmount += $orderItem->getPrice();
+            $currency = $orderItem->getCurrency();
+        }
+
+        $existingTask = $this->payoutTaskRepository->findOneByOrderAndPaymentType($order, PayoutTaskPaymentType::REFUND);
+
+        if ($canceledAmount === 0) {
+            if ($existingTask !== null) {
+                $this->entityManager->remove($existingTask);
+            }
+
+            return;
+        }
+
+        $currency ??= PriceCurrency::EURO;
+
+        if ($existingTask === null) {
+            $existingTask = (new PayoutTask())
+                ->setOrder($order)
+                ->setStatus(PayoutTaskStatus::PENDING_TO_PAY)
+                ->setCurrency($currency)
+                ->setPaymentType(PayoutTaskPaymentType::REFUND);
+            $order->addPayoutTask($existingTask);
+            $this->entityManager->persist($existingTask);
+        } elseif ($existingTask->getCurrency() !== $currency) {
+            $existingTask->setCurrency($currency);
+        }
+
+        $existingTask->setAmount($canceledAmount);
     }
 
     private function notifySellerForPaymentInformation(Order $order, OrderItem $item, User $buyer, PayoutTask $task): void

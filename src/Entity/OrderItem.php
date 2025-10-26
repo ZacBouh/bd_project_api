@@ -142,4 +142,14 @@ class OrderItem
         $this->status = OrderItemStatus::BUYER_CONFIRMED;
         $this->buyerConfirmedAt = $confirmedAt ?? new DateTimeImmutable();
     }
+
+    public function markBuyerCanceled(): void
+    {
+        if ($this->status === OrderItemStatus::CANCELED) {
+            return;
+        }
+
+        $this->status = OrderItemStatus::CANCELED;
+        $this->buyerConfirmedAt = null;
+    }
 }
