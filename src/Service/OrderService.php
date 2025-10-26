@@ -17,6 +17,7 @@ use App\Enum\PriceCurrency;
 use App\Repository\PayoutTaskRepository;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\PersistentCollection;
 use LogicException;
 use Psr\Log\LoggerInterface;
 
@@ -30,16 +31,15 @@ class OrderService
     ) {
     }
 
-    public function confirmOrderItem(OrderItem $item, User $buyer): void
+    public function confirmOrderItem(Order $order, OrderItem $item, User $buyer): void
     {
-        $order = $item->getOrder();
-        if ($order === null) {
-            throw new LogicException('Order item must be attached to an order.');
-        }
-
         $orderBuyer = $order->getUser();
         if ($orderBuyer === null || $orderBuyer->getId() !== $buyer->getId()) {
             throw new LogicException('This order item does not belong to the provided buyer.');
+        }
+
+        if ($item->getOrder()?->getId() !== $order->getId()) {
+            throw new LogicException('Order item does not belong to the given order.');
         }
 
         if ($item->getStatus() === OrderItemStatus::BUYER_CONFIRMED) {
@@ -54,16 +54,15 @@ class OrderService
         $this->entityManager->flush();
     }
 
-    public function cancelOrderItem(OrderItem $item, User $buyer): void
+    public function cancelOrderItem(Order $order, OrderItem $item, User $buyer): void
     {
-        $order = $item->getOrder();
-        if ($order === null) {
-            throw new LogicException('Order item must be attached to an order.');
-        }
-
         $orderBuyer = $order->getUser();
         if ($orderBuyer === null || $orderBuyer->getId() !== $buyer->getId()) {
             throw new LogicException('This order item does not belong to the provided buyer.');
+        }
+
+        if ($item->getOrder()?->getId() !== $order->getId()) {
+            throw new LogicException('Order item does not belong to the given order.');
         }
 
         if (!$this->cancelOrderItemInternal($item)) {
@@ -83,9 +82,14 @@ class OrderService
             throw new LogicException('This order does not belong to the provided buyer.');
         }
 
+        $items = $order->getItems();
+        if ($items instanceof PersistentCollection && !$items->isInitialized()) {
+            $items->initialize();
+        }
+
         $hasConfirmedItem = false;
         $hasUpdatedItem = false;
-        foreach ($order->getItems() as $orderItem) {
+        foreach ($items as $orderItem) {
             if ($orderItem->getStatus() === OrderItemStatus::BUYER_CONFIRMED) {
                 $hasConfirmedItem = true;
 
@@ -97,7 +101,7 @@ class OrderService
             throw new LogicException('Cannot cancel an order that already has confirmed items.');
         }
 
-        foreach ($order->getItems() as $orderItem) {
+        foreach ($items as $orderItem) {
             if ($this->cancelOrderItemInternal($orderItem)) {
                 $hasUpdatedItem = true;
             }
@@ -184,6 +188,10 @@ class OrderService
     private function updateOrderStatus(Order $order): void
     {
         $items = $order->getItems();
+        if ($items instanceof PersistentCollection && !$items->isInitialized()) {
+            $items->initialize();
+        }
+
         if ($items->isEmpty()) {
             $order->setStatus(OrderPaymentStatus::PAID_PENDING_HANDOVER);
 

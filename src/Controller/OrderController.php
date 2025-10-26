@@ -178,7 +178,7 @@ class OrderController extends AbstractController
         }
 
         try {
-            $this->orderService->confirmOrderItem($orderItem, $user);
+            $this->orderService->confirmOrderItem($order, $orderItem, $user);
         } catch (LogicException $exception) {
             return new JsonResponse(['error' => $exception->getMessage()], Response::HTTP_BAD_REQUEST);
         }
@@ -235,7 +235,7 @@ class OrderController extends AbstractController
         }
 
         try {
-            $this->orderService->cancelOrderItem($orderItem, $user);
+            $this->orderService->cancelOrderItem($order, $orderItem, $user);
         } catch (LogicException $exception) {
             return new JsonResponse(['error' => $exception->getMessage()], Response::HTTP_BAD_REQUEST);
         }

@@ -69,7 +69,7 @@ final class OrderServiceTest extends TestCase
 
         $order->addItem($item);
 
-        $service->confirmOrderItem($item, $buyer);
+        $service->confirmOrderItem($order, $item, $buyer);
 
         self::assertSame(OrderPaymentStatus::COMPLETED, $order->getStatus());
         self::assertInstanceOf(PayoutTask::class, $storedTask);
@@ -133,10 +133,10 @@ final class OrderServiceTest extends TestCase
         $order->addItem($firstItem);
         $order->addItem($secondItem);
 
-        $service->confirmOrderItem($firstItem, $buyer);
+        $service->confirmOrderItem($order, $firstItem, $buyer);
         self::assertSame(OrderPaymentStatus::IN_PROGRESS_PARTIAL, $order->getStatus());
 
-        $service->confirmOrderItem($secondItem, $buyer);
+        $service->confirmOrderItem($order, $secondItem, $buyer);
         self::assertSame(OrderPaymentStatus::COMPLETED, $order->getStatus());
         self::assertInstanceOf(PayoutTask::class, $storedTask);
         self::assertSame(PayoutTaskPaymentType::ORDER, $storedTask->getPaymentType());
@@ -209,13 +209,13 @@ final class OrderServiceTest extends TestCase
             ->addItem($secondItem)
             ->addItem($thirdItem);
 
-        $service->confirmOrderItem($firstItem, $buyer);
+        $service->confirmOrderItem($order, $firstItem, $buyer);
         self::assertSame(OrderPaymentStatus::IN_PROGRESS_PARTIAL, $order->getStatus());
 
-        $service->cancelOrderItem($secondItem, $buyer);
+        $service->cancelOrderItem($order, $secondItem, $buyer);
         self::assertSame(OrderPaymentStatus::IN_PROGRESS_PARTIAL, $order->getStatus());
 
-        $service->cancelOrderItem($thirdItem, $buyer);
+        $service->cancelOrderItem($order, $thirdItem, $buyer);
         self::assertSame(OrderPaymentStatus::COMPLETED, $order->getStatus());
     }
 
@@ -264,7 +264,7 @@ final class OrderServiceTest extends TestCase
 
         $order->addItem($item);
 
-        $service->cancelOrderItem($item, $buyer);
+        $service->cancelOrderItem($order, $item, $buyer);
 
         self::assertSame(OrderItemStatus::CANCELED, $item->getStatus());
         self::assertSame(OrderPaymentStatus::CANCELED, $order->getStatus());
