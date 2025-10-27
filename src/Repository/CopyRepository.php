@@ -38,6 +38,7 @@ class CopyRepository extends ServiceEntityRepository
         ?int $publisherId,
         ?string $isbn,
         string $orderDirection,
+        string $orderField,
     ): array {
         $qb = $this->createQueryBuilder('copy')
             ->andWhere('copy.deletedAt IS NULL')
@@ -54,12 +55,19 @@ class CopyRepository extends ServiceEntityRepository
             ->leftJoin('copy.uploadedImages', 'uploadedImage')
             ->addSelect('uploadedImage')
             ->setFirstResult($offset)
-            ->setMaxResults($limit)
-            ->orderBy('copy.updatedAt', $orderDirection);
+            ->setMaxResults($limit);
+
+        $orderColumn = match ($orderField) {
+            'price' => 'copy.price',
+            default => 'copy.updatedAt',
+        };
+
+        $qb->orderBy($orderColumn, $orderDirection);
 
         if (!is_null($condition)) {
-            $qb->andWhere('copy.copyCondition = :condition')
-                ->setParameter('condition', $condition);
+            $qb
+                ->andWhere('copy.copyCondition IN (:conditions)')
+                ->setParameter('conditions', $condition->sameOrBetterValues());
         }
 
         if (!is_null($minPrice)) {

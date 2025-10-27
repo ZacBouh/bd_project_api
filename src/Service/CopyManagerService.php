@@ -105,6 +105,7 @@ class CopyManagerService
         ?int $publisherId,
         ?string $isbn,
         string $order,
+        string $orderField,
     ): array {
         $copies = $this->copyRepository->findForSaleWithFilters(
             $limit,
@@ -116,6 +117,7 @@ class CopyManagerService
             $publisherId,
             $isbn,
             $order,
+            $orderField,
         );
 
         $copyDTOs = [];

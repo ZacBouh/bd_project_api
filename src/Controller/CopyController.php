@@ -126,7 +126,7 @@ final class CopyController extends AbstractController
             new OA\Parameter(
                 name: 'copyCondition',
                 in: 'query',
-                description: 'Filtrer par état de l\'exemplaire (mint, near_mint, very_fine, fine, very_good, good, fair, poor)',
+                description: 'Filtrer par état minimal de l\'exemplaire (mint, near_mint, very_fine, fine, very_good, good, fair, poor). Inclut automatiquement les états meilleurs.',
                 required: false,
                 schema: new OA\Schema(
                     type: 'string',
@@ -174,9 +174,16 @@ final class CopyController extends AbstractController
             new OA\Parameter(
                 name: 'order',
                 in: 'query',
-                description: 'Ordre de tri sur la date de mise à jour (ASC ou DESC)',
+                description: 'Ordre de tri (ASC ou DESC)',
                 required: false,
                 schema: new OA\Schema(type: 'string', enum: ['ASC', 'DESC'], default: 'DESC')
+            ),
+            new OA\Parameter(
+                name: 'orderBy',
+                in: 'query',
+                description: 'Champ de tri (updatedAt ou price)',
+                required: false,
+                schema: new OA\Schema(type: 'string', enum: ['updatedAt', 'price'], default: 'updatedAt')
             ),
         ],
         responses: [
@@ -223,6 +230,20 @@ final class CopyController extends AbstractController
                 throw new BadRequestException('Invalid copyCondition value');
             }
         }
+
+        $orderFieldRaw = $request->query->get('orderBy');
+        $orderFieldNormalized = 'updatedat';
+        if ($orderFieldRaw !== null && $orderFieldRaw !== '') {
+            $orderFieldNormalized = strtolower((string) $orderFieldRaw);
+        }
+        $allowedOrderFields = [
+            'updatedat' => 'updatedAt',
+            'price' => 'price',
+        ];
+        if (!array_key_exists($orderFieldNormalized, $allowedOrderFields)) {
+            throw new BadRequestException('orderBy must be either updatedAt or price');
+        }
+        $orderField = $allowedOrderFields[$orderFieldNormalized];
 
         $language = null;
         $languageValue = $request->query->get('titleLanguage');
@@ -301,6 +322,7 @@ final class CopyController extends AbstractController
             $publisherId,
             $isbn,
             $order,
+            $orderField,
         );
 
         return $this->json($copies);
