@@ -144,6 +144,7 @@ class OrderController extends AbstractController
             new OA\Response(response: Response::HTTP_OK, description: 'État mis à jour.'),
             new OA\Response(response: Response::HTTP_BAD_REQUEST, description: 'Commande invalide.'),
             new OA\Response(response: Response::HTTP_NOT_FOUND, description: 'Élément de commande introuvable.'),
+            new OA\Response(response: Response::HTTP_FORBIDDEN, description: 'Accès refusé.'),
             new OA\Response(response: Response::HTTP_UNAUTHORIZED, description: 'Utilisateur non authentifié.'),
         ]
     )]
@@ -167,9 +168,19 @@ class OrderController extends AbstractController
 
         $itemId = (int) $itemIdRaw;
 
-        $order = $this->orderRepository->findOneForBuyer($orderRef, $user);
+        $order = $this->orderRepository->findOneForViewer($orderRef);
         if ($order === null) {
             return new JsonResponse(['error' => 'Order not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $orderOwner = $order->getUser();
+        if (!$orderOwner instanceof User) {
+            return new JsonResponse(['error' => 'Order owner not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $isAdmin = $this->isGranted('ROLE_ADMIN');
+        if (!$isAdmin && $orderOwner->getId() !== $user->getId()) {
+            return new JsonResponse(['error' => 'Access denied'], Response::HTTP_FORBIDDEN);
         }
 
         $orderItem = $this->orderService->findOrderItem($order, $itemId);
@@ -178,7 +189,7 @@ class OrderController extends AbstractController
         }
 
         try {
-            $this->orderService->confirmOrderItem($order, $orderItem, $user);
+            $this->orderService->confirmOrderItem($order, $orderItem, $orderOwner);
         } catch (LogicException $exception) {
             return new JsonResponse(['error' => $exception->getMessage()], Response::HTTP_BAD_REQUEST);
         }
@@ -201,6 +212,7 @@ class OrderController extends AbstractController
             new OA\Response(response: Response::HTTP_OK, description: 'Commande mise à jour.'),
             new OA\Response(response: Response::HTTP_BAD_REQUEST, description: 'Commande invalide.'),
             new OA\Response(response: Response::HTTP_NOT_FOUND, description: 'Élément de commande introuvable.'),
+            new OA\Response(response: Response::HTTP_FORBIDDEN, description: 'Accès refusé.'),
             new OA\Response(response: Response::HTTP_UNAUTHORIZED, description: 'Utilisateur non authentifié.'),
         ]
     )]
@@ -224,9 +236,19 @@ class OrderController extends AbstractController
 
         $itemId = (int) $itemIdRaw;
 
-        $order = $this->orderRepository->findOneForBuyer($orderRef, $user);
+        $order = $this->orderRepository->findOneForViewer($orderRef);
         if ($order === null) {
             return new JsonResponse(['error' => 'Order not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $orderOwner = $order->getUser();
+        if (!$orderOwner instanceof User) {
+            return new JsonResponse(['error' => 'Order owner not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $isAdmin = $this->isGranted('ROLE_ADMIN');
+        if (!$isAdmin && $orderOwner->getId() !== $user->getId()) {
+            return new JsonResponse(['error' => 'Access denied'], Response::HTTP_FORBIDDEN);
         }
 
         $orderItem = $this->orderService->findOrderItem($order, $itemId);
@@ -235,7 +257,7 @@ class OrderController extends AbstractController
         }
 
         try {
-            $this->orderService->cancelOrderItem($order, $orderItem, $user);
+            $this->orderService->cancelOrderItem($order, $orderItem, $orderOwner);
         } catch (LogicException $exception) {
             return new JsonResponse(['error' => $exception->getMessage()], Response::HTTP_BAD_REQUEST);
         }
@@ -257,6 +279,7 @@ class OrderController extends AbstractController
             new OA\Response(response: Response::HTTP_OK, description: 'Commande annulée.'),
             new OA\Response(response: Response::HTTP_BAD_REQUEST, description: 'Commande invalide.'),
             new OA\Response(response: Response::HTTP_NOT_FOUND, description: 'Commande introuvable.'),
+            new OA\Response(response: Response::HTTP_FORBIDDEN, description: 'Accès refusé.'),
             new OA\Response(response: Response::HTTP_UNAUTHORIZED, description: 'Utilisateur non authentifié.'),
         ]
     )]
@@ -267,13 +290,23 @@ class OrderController extends AbstractController
             return new JsonResponse(['error' => 'Authentication required'], Response::HTTP_UNAUTHORIZED);
         }
 
-        $order = $this->orderRepository->findOneForBuyer($orderRef, $user);
+        $order = $this->orderRepository->findOneForViewer($orderRef);
         if ($order === null) {
             return new JsonResponse(['error' => 'Order not found'], Response::HTTP_NOT_FOUND);
         }
 
+        $orderOwner = $order->getUser();
+        if (!$orderOwner instanceof User) {
+            return new JsonResponse(['error' => 'Order owner not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $isAdmin = $this->isGranted('ROLE_ADMIN');
+        if (!$isAdmin && $orderOwner->getId() !== $user->getId()) {
+            return new JsonResponse(['error' => 'Access denied'], Response::HTTP_FORBIDDEN);
+        }
+
         try {
-            $this->orderService->cancelOrder($order, $user);
+            $this->orderService->cancelOrder($order, $orderOwner);
         } catch (LogicException $exception) {
             return new JsonResponse(['error' => $exception->getMessage()], Response::HTTP_BAD_REQUEST);
         }

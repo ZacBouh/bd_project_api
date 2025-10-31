@@ -147,6 +147,26 @@ class CopyManagerService
             throw new ResourceNotFoundException("Update Copy : no copy found for id " . $dto->id);
         }
 
+        /** @var User|null $user */
+        $user = $this->security->getUser();
+        if (!$user instanceof User) {
+            throw new AccessDeniedException('Access denied');
+        }
+
+        $owner = $copy->getOwner();
+        if (!$owner instanceof User) {
+            throw new ResourceNotFoundException("Update Copy : no owner found for id " . $dto->id);
+        }
+
+        $isAdmin = $this->security->isGranted(Role::ADMIN->value);
+        if (!$isAdmin && $owner->getId() !== $user->getId()) {
+            throw new AccessDeniedException('Connected user does not have the right to update a copy from another user library');
+        }
+
+        if (!$isAdmin && $dto->owner !== $owner->getId()) {
+            $dto->owner = $owner->getId();
+        }
+
         $copy = $this->copyMapper->fromWriteDTO($dto, $copy);
         $this->logger->critical(sprintf("Copy For Sale status : %s", json_encode($copy->getForSale())));
         $this->entityManager->persist($copy);
