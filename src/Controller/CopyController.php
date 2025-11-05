@@ -66,6 +66,7 @@ final class CopyController extends AbstractController
                 description: 'Exemplaire créé.',
                 content: new OA\JsonContent(ref: new Model(type: CopyReadDTO::class))
             ),
+            new OA\Response(response: Response::HTTP_FORBIDDEN, description: 'Accès refusé.'),
             new OA\Response(response: Response::HTTP_BAD_REQUEST, description: 'Requête invalide.')
         ]
     )]
@@ -362,6 +363,7 @@ final class CopyController extends AbstractController
                 )
             ),
             new OA\Response(response: Response::HTTP_BAD_REQUEST, description: 'Requête invalide.'),
+            new OA\Response(response: Response::HTTP_FORBIDDEN, description: 'Accès refusé.'),
             new OA\Response(response: Response::HTTP_INTERNAL_SERVER_ERROR, description: 'Erreur lors de la suppression.')
         ]
     )]
@@ -426,6 +428,7 @@ final class CopyController extends AbstractController
                 description: 'Exemplaire mis à jour.',
                 content: new OA\JsonContent(ref: new Model(type: CopyReadDTO::class))
             ),
+            new OA\Response(response: Response::HTTP_FORBIDDEN, description: 'Accès refusé.'),
             new OA\Response(response: Response::HTTP_BAD_REQUEST, description: 'Requête invalide.')
         ]
     )]

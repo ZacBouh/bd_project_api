@@ -45,15 +45,18 @@ class CopyManagerService
      */
     public function createCopy(InputBag $newCopyData, FileBag $files): Copy
     {
-        /**
-         * @var User $user
-         * @throws AccessDeniedException
-         * @throws ValidationFailedException
-         */
+        /** @var User|null $user */
         $user = $this->security->getUser();
+        if (!$user instanceof User) {
+            throw new AccessDeniedException('Access denied');
+        }
+
         $userId = $user->getId();
         $newCopyOwnerId =  (int) $newCopyData->get('ownerId');
-        if ($userId !== $newCopyOwnerId) {
+        if (
+            $userId !== $newCopyOwnerId
+            && !$this->security->isGranted(Role::ADMIN->value)
+        ) {
             $message = "User with id $userId cannot create a copy for user with id $newCopyOwnerId";
             throw new AccessDeniedException($message);
         }
@@ -134,8 +137,11 @@ class CopyManagerService
      */
     public function removeCopy(int $copyId, bool $hardDelete = false): void
     {
-        /** @var User $user */
+        /** @var User|null $user */
         $user = $this->security->getUser();
+        if (!$user instanceof User) {
+            throw new AccessDeniedException('Access denied');
+        }
         $this->logger->debug("Looking for a copy to remove with id $copyId");
         /** @var Copy|null $copy */
         $copy = $this->copyRepository->findOneBy(['id' => $copyId]);
@@ -182,6 +188,26 @@ class CopyManagerService
         }
         if ($copy->isDeleted()) {
             throw new ResourceNotFoundException("Update Copy : no copy found for id " . $dto->id);
+        }
+
+        /** @var User|null $user */
+        $user = $this->security->getUser();
+        if (!$user instanceof User) {
+            throw new AccessDeniedException('Access denied');
+        }
+
+        $owner = $copy->getOwner();
+        if (!$owner instanceof User) {
+            throw new ResourceNotFoundException("Update Copy : no owner found for id " . $dto->id);
+        }
+
+        $isAdmin = $this->security->isGranted(Role::ADMIN->value);
+        if (!$isAdmin && $owner->getId() !== $user->getId()) {
+            throw new AccessDeniedException('Connected user does not have the right to update a copy from another user library');
+        }
+
+        if (!$isAdmin && $dto->owner !== $owner->getId()) {
+            $dto->owner = $owner->getId();
         }
 
         $copy = $this->copyMapper->fromWriteDTO($dto, $copy);
