@@ -210,7 +210,13 @@ class CopyManagerService
             $dto->owner = $owner->getId();
         }
 
-        $copy = $this->copyMapper->fromWriteDTO($dto, $copy);
+        $extra = [];
+        if (!is_null($dto->coverImageFile)) {
+            $this->logger->debug('CopyWriteDTO has a cover image file for update');
+            $extra['coverImage'] = $this->imageService->saveUploadedImage($dto->coverImageFile, 'Copy Cover');
+        }
+
+        $copy = $this->copyMapper->fromWriteDTO($dto, $copy, $extra);
         $this->logger->critical(sprintf("Copy For Sale status : %s", json_encode($copy->getForSale())));
         $this->entityManager->persist($copy);
         $this->entityManager->flush();
