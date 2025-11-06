@@ -30,17 +30,7 @@ class CopyRepository extends ServiceEntityRepository
         $qb = $this->createQueryBuilder('copy')
             ->andWhere('copy.deletedAt IS NULL')
             ->andWhere('copy.id = :id')
-            ->setParameter('id', $id);
-
-        /** @var User $user */
-        $user = $this->security->getUser();
-        if (!$this->security->isGranted(Role::ADMIN->value)) {
-            $qb
-                ->andWhere('copy.owner = :owner')
-                ->setParameter('owner', $user);
-        }
-
-        $qb
+            ->setParameter('id', $id)
             ->leftJoin('copy.owner', 'owner')
             ->addSelect('owner')
             ->leftJoin('copy.title', 'title')

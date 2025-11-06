@@ -18,6 +18,8 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Exception\ResourceNotFoundException;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 final class CopyController extends AbstractController
 {
@@ -125,6 +127,10 @@ final class CopyController extends AbstractController
                 content: new OA\JsonContent(ref: new Model(type: CopyReadDTO::class))
             ),
             new OA\Response(
+                response: Response::HTTP_FORBIDDEN,
+                description: 'L\'exemplaire n\'appartient pas à l\'utilisateur authentifié.'
+            ),
+            new OA\Response(
                 response: Response::HTTP_NOT_FOUND,
                 description: 'Aucun exemplaire trouvé pour cet identifiant.'
             )
@@ -134,7 +140,19 @@ final class CopyController extends AbstractController
     {
         $this->logger->info(sprintf('Received Get Copy Request for id %d', $id));
 
-        $copy = $this->copyService->getCopy($id);
+        try {
+            $copy = $this->copyService->getCopy($id);
+        } catch (ResourceNotFoundException $exception) {
+            return $this->json(
+                ['message' => $exception->getMessage()],
+                Response::HTTP_NOT_FOUND
+            );
+        } catch (AccessDeniedException $exception) {
+            return $this->json(
+                ['message' => $exception->getMessage()],
+                Response::HTTP_FORBIDDEN
+            );
+        }
 
         return $this->json($copy, Response::HTTP_OK);
     }
