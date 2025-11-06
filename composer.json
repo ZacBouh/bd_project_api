@@ -97,6 +97,7 @@
     "require-dev": {
         "phpstan/phpstan": "^2.1.30",
         "phpstan/phpstan-doctrine": "^2.0.6",
-        "symfony/maker-bundle": "^1.64"
+        "symfony/maker-bundle": "^1.64",
+        "symfony/phpunit-bridge": "^7.3"
     }
 }
