@@ -67,11 +67,7 @@ final class PaymentServiceTest extends TestCase
     {
         $this->stripeSessions = new FakeStripeCheckoutSessions();
 
-        /** @var StripeClient&MockObject $stripeClient */
-        $stripeClient = $this->getMockBuilder(StripeClient::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $stripeClient->checkout = new FakeStripeCheckout($this->stripeSessions);
+        $stripeClient = new FakeStripeClient(new FakeStripeCheckout($this->stripeSessions));
 
         $this->validator = $this->createMock(ValidatorInterface::class);
         $this->copyRepository = $this->createMock(CopyRepository::class);
@@ -271,6 +267,18 @@ final class PaymentServiceTest extends TestCase
         $header = sprintf('t=%s,v1=%s', $timestamp, $signature);
 
         return new Request([], [], [], [], [], ['HTTP_STRIPE_SIGNATURE' => $header], $body);
+    }
+}
+
+final class FakeStripeClient extends StripeClient
+{
+    public FakeStripeCheckout $checkout;
+
+    public function __construct(FakeStripeCheckout $checkout)
+    {
+        parent::__construct('sk_test');
+
+        $this->checkout = $checkout;
     }
 }
 

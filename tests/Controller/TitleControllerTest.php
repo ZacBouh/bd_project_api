@@ -9,6 +9,8 @@ use App\DTO\Title\TitleDTOFactory;
 use App\Service\TitleManagerService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use Psr\Container\ContainerInterface;
+use RuntimeException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Validator\ConstraintViolation;
@@ -23,7 +25,7 @@ final class TitleControllerTest extends TestCase
         $dtoFactory = $this->createMock(TitleDTOFactory::class);
         $logger = $this->createMock(LoggerInterface::class);
 
-        $controller = new TitleController($manager, $dtoFactory, $logger);
+        $controller = $this->createController($manager, $dtoFactory, $logger);
 
         $violations = new ConstraintViolationList([
             new ConstraintViolation(
@@ -53,5 +55,26 @@ final class TitleControllerTest extends TestCase
             ['isbn' => ['The provided isbn is not in a valid format']],
             $payload['errors'] ?? null
         );
+}
+
+    private function createController(
+        TitleManagerService $manager,
+        TitleDTOFactory $dtoFactory,
+        LoggerInterface $logger
+    ): TitleController {
+        $controller = new TitleController($manager, $dtoFactory, $logger);
+        $controller->setContainer(new class() implements ContainerInterface {
+            public function get(string $id): mixed
+            {
+                throw new RuntimeException(sprintf('Service "%s" is not available in test container.', $id));
+            }
+
+            public function has(string $id): bool
+            {
+                return false;
+            }
+        });
+
+        return $controller;
     }
 }
