@@ -95,6 +95,19 @@ class CopyManagerService
         return $copyDTOs;
     }
 
+    public function getCopy(int $copyId): CopyReadDTO
+    {
+        $this->logger->info(sprintf('Looking for copy with id %d', $copyId));
+
+        $copy = $this->copyRepository->findOneWithRelations($copyId);
+
+        if (is_null($copy)) {
+            throw new ResourceNotFoundException('No copy was found with id ' . $copyId);
+        }
+
+        return $this->dtoFactory->readDtoFromEntity($copy);
+    }
+
     /**
      * @return array<CopyReadDTO>
      */

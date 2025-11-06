@@ -105,6 +105,40 @@ final class CopyController extends AbstractController
         return $this->json($data);
     }
 
+    #[Route('/api/copy/{id}', name: 'copy_detail', methods: 'GET')]
+    #[OA\Get(
+        summary: 'Récupérer le détail d\'un exemplaire',
+        tags: ['Copies'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'Identifiant de l\'exemplaire',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            )
+        ],
+        responses: [
+            new OA\Response(
+                response: Response::HTTP_OK,
+                description: 'Détail de l\'exemplaire.',
+                content: new OA\JsonContent(ref: new Model(type: CopyReadDTO::class))
+            ),
+            new OA\Response(
+                response: Response::HTTP_NOT_FOUND,
+                description: 'Aucun exemplaire trouvé pour cet identifiant.'
+            )
+        ]
+    )]
+    public function getCopy(int $id): JsonResponse
+    {
+        $this->logger->info(sprintf('Received Get Copy Request for id %d', $id));
+
+        $copy = $this->copyService->getCopy($id);
+
+        return $this->json($copy, Response::HTTP_OK);
+    }
+
     #[Route('/api/copy/for-sale', name: 'copy_for_sale_list', methods: 'GET')]
     #[OA\Get(
         summary: 'Lister les exemplaires en vente avec filtres',

@@ -25,6 +25,43 @@ class CopyRepository extends ServiceEntityRepository
         parent::__construct($registry, Copy::class);
     }
 
+    public function findOneWithRelations(int $id): ?Copy
+    {
+        $qb = $this->createQueryBuilder('copy')
+            ->andWhere('copy.deletedAt IS NULL')
+            ->andWhere('copy.id = :id')
+            ->setParameter('id', $id);
+
+        /** @var User $user */
+        $user = $this->security->getUser();
+        if (!$this->security->isGranted(Role::ADMIN->value)) {
+            $qb
+                ->andWhere('copy.owner = :owner')
+                ->setParameter('owner', $user);
+        }
+
+        $qb
+            ->leftJoin('copy.owner', 'owner')
+            ->addSelect('owner')
+            ->leftJoin('copy.title', 'title')
+            ->addSelect('title')
+            ->leftJoin('title.publisher', 'publisher')
+            ->addSelect('publisher')
+            ->leftJoin('title.artistsContributions', 'contributions')
+            ->addSelect('contributions')
+            ->leftJoin('contributions.artist', 'artist')
+            ->addSelect('artist')
+            ->leftJoin('copy.coverImage', 'coverImage')
+            ->addSelect('coverImage')
+            ->leftJoin('copy.uploadedImages', 'uploadedImage')
+            ->addSelect('uploadedImage');
+
+        /** @var Copy|null $copy */
+        $copy = $qb->getQuery()->getOneOrNullResult();
+
+        return $copy;
+    }
+
     /**
      * @return array<Copy>
      */
