@@ -38,6 +38,7 @@ class CopyManagerService
         private CopyMapper $copyMapper,
         private ValidatorInterface $validator,
         private CopyDTOFactory $dtoFactory,
+        private TitleRepository $titleRepository,
     ) {}
 
     /**
@@ -71,6 +72,12 @@ class CopyManagerService
             $this->logger->debug('CopyWriteDTO has a cover image file');
             $coverImage = $this->imageService->saveUploadedImage($dto->coverImageFile, 'Copy Cover');
             $this->logger->debug(sprintf('Saved CopyWriteDTO cover image at id : %s', $coverImage->getId()));
+        } else {
+            $title = $this->titleRepository->find($dto->title);
+            $coverImage = $title?->getCoverImage();
+            if (!is_null($coverImage)) {
+                $this->logger->debug(sprintf('Using cover image from title id %s for new copy', $title?->getId()));
+            }
         }
         $entity = $this->copyMapper->fromWriteDTO($dto, extra: ['coverImage' => $coverImage]);
         $this->entityManager->persist($entity);
