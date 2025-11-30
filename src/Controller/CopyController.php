@@ -18,6 +18,8 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Exception\ResourceNotFoundException;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 final class CopyController extends AbstractController
 {
@@ -103,6 +105,56 @@ final class CopyController extends AbstractController
         $data = $this->copyService->getCopies();
 
         return $this->json($data);
+    }
+
+    #[Route('/api/copy/{id}', name: 'copy_detail', methods: 'GET')]
+    #[OA\Get(
+        summary: 'Récupérer le détail d\'un exemplaire',
+        tags: ['Copies'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'Identifiant de l\'exemplaire',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            )
+        ],
+        responses: [
+            new OA\Response(
+                response: Response::HTTP_OK,
+                description: 'Détail de l\'exemplaire.',
+                content: new OA\JsonContent(ref: new Model(type: CopyReadDTO::class))
+            ),
+            new OA\Response(
+                response: Response::HTTP_FORBIDDEN,
+                description: 'L\'exemplaire n\'appartient pas à l\'utilisateur authentifié.'
+            ),
+            new OA\Response(
+                response: Response::HTTP_NOT_FOUND,
+                description: 'Aucun exemplaire trouvé pour cet identifiant.'
+            )
+        ]
+    )]
+    public function getCopy(int $id): JsonResponse
+    {
+        $this->logger->info(sprintf('Received Get Copy Request for id %d', $id));
+
+        try {
+            $copy = $this->copyService->getCopy($id);
+        } catch (ResourceNotFoundException $exception) {
+            return $this->json(
+                ['message' => $exception->getMessage()],
+                Response::HTTP_NOT_FOUND
+            );
+        } catch (AccessDeniedException $exception) {
+            return $this->json(
+                ['message' => $exception->getMessage()],
+                Response::HTTP_FORBIDDEN
+            );
+        }
+
+        return $this->json($copy, Response::HTTP_OK);
     }
 
     #[Route('/api/copy/for-sale', name: 'copy_for_sale_list', methods: 'GET')]

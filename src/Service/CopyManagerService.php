@@ -103,6 +103,36 @@ class CopyManagerService
     }
 
     /**
+     * @throws ResourceNotFoundException
+     * @throws AccessDeniedException
+     */
+    public function getCopy(int $copyId): CopyReadDTO
+    {
+        $this->logger->info(sprintf('Looking for copy with id %d', $copyId));
+
+        /** @var User|null $user */
+        $user = $this->security->getUser();
+        if (!$user instanceof User) {
+            throw new AccessDeniedException('Access denied. Please authenticate to access copy details.');
+        }
+
+        $copy = $this->copyRepository->findOneWithRelations($copyId);
+
+        if (is_null($copy)) {
+            throw new ResourceNotFoundException('No copy was found with id ' . $copyId);
+        }
+
+        if (
+            !$this->security->isGranted(Role::ADMIN->value)
+            && $copy->getOwner()?->getId() !== $user->getId()
+        ) {
+            throw new AccessDeniedException(sprintf('Copy with id %d does not belong to the authenticated user.', $copyId));
+        }
+
+        return $this->dtoFactory->readDtoFromEntity($copy);
+    }
+
+    /**
      * @return array<CopyReadDTO>
      */
     public function getCopiesForSale(
