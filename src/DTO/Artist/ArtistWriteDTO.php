@@ -14,10 +14,8 @@ class ArtistWriteDTO
      * @param array<string> $skills
      */
     public function __construct(
-        #[Assert\All(constraints: [
-            new Assert\Type('integer'),
-            new Assert\Positive()
-        ])]
+        #[Assert\Type('integer')]
+        #[Assert\Positive]
         public ?int $id,
         public ?string $firstName,
         public ?string $lastName,
